@@ -32,7 +32,7 @@ PLAQS = [
 
 
 # Ancilla positions for the 4 plaquettes (both X and Z stabilizers share geometry on d=3)
-# centers at (row+0.5, col+0.5) for the four 2x2 blocks:
+# Centers at (row+0.5, col+0.5) for the four 2x2 blocks:
 ANC_POS = {
     0: (0.5, 0.5),
     1: (0.5, 1.5),
