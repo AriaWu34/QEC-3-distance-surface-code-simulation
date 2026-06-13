@@ -1,0 +1,14 @@
+README.md
+pyproject.toml
+src/qec/__init__.py
+src/qec/circuit.py
+src/qec/decoder.py
+src/qec/geometry.py
+src/qec/noise.py
+src/qec/simulation.py
+src/qec/syndrome.py
+src/qec.egg-info/PKG-INFO
+src/qec.egg-info/SOURCES.txt
+src/qec.egg-info/dependency_links.txt
+src/qec.egg-info/top_level.txt
+tests/test_geometry.py
