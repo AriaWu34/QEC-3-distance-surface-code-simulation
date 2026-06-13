@@ -45,7 +45,8 @@ tests/
 
 notebooks/
 ├── demo.ipynb
-└── repetition-code-simulation.ipynb
+├── repetition-code-simulation.ipynb
+└── 3-distance-surface-code.ipynb
 ```
 
 ---
