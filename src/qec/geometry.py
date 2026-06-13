@@ -2,6 +2,17 @@
 Geometry and indexing utilities for the distance-3 surface code.
 """
 
+
+# Distance-3 code layout constants
+N_DATA = 9
+N_X = 4
+N_Z = 4
+
+# Ancilla qubit indices in the circuit register
+X_START = N_DATA
+Z_START = N_DATA + N_X
+
+
 # Data qubit indexing:
 #
 # (0,0) (0,1) (0,2)
@@ -13,7 +24,6 @@ Geometry and indexing utilities for the distance-3 surface code.
 # 0 1 2
 # 3 4 5
 # 6 7 8
-
 
 def d_idx(r: int, c: int) -> int:
     """
@@ -31,8 +41,7 @@ PLAQS = [
 ]
 
 
-# Ancilla positions for the 4 plaquettes (both X and Z stabilizers share geometry on d=3)
-# Centers at (row+0.5, col+0.5) for the four 2x2 blocks:
+# Ancilla positions for the 4 plaquettes
 ANC_POS = {
     0: (0.5, 0.5),
     1: (0.5, 1.5),
@@ -47,7 +56,7 @@ LEFT_X, RIGHT_X = -0.5, 2.5       # smooth (X-syndrome → correct Z errors → 
 GRID_SPAN = 3.0                   # distance across the code (rows or cols 0..2 → span ~3)
 
 
-def manhattan(p, q):
+def manhattan(p: tuple, q: tuple) -> float:
     """
     Manhattan distance between two coordinates.
     """

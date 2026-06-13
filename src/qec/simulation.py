@@ -1,0 +1,98 @@
+"""
+Simulation and benchmarking utilities for surface-code experiments.
+
+Provides Monte Carlo routines for estimating logical failure rates
+under different noise models and decoding strategies.
+"""
+
+import numpy as np
+
+from qiskit import transpile
+from qiskit_aer import AerSimulator
+
+from qec.circuit import k_rounds_surface_d3
+from qec.noise import depol_noise_model
+from qec.decoder import (
+    decode_one_shot,
+    decode_spacetime_one_shot,
+)
+
+def logical_failure_rates_single(
+    k: int = 1,
+    shots: int = 4000,
+    p1: float = 0.01,
+    ro: float = 0.0,
+) -> tuple[float, float]:
+    """
+    Estimate logical failure rates using last-round-only decoding.
+    """
+        
+    sim = AerSimulator()
+    qc = k_rounds_surface_d3(k)
+    tc = transpile(qc, sim, basis_gates=['id','rz','sx','x','h','cx','measure'],
+                   optimization_level=1)
+    nm = depol_noise_model(p1=p1, ro=ro)
+
+    res = sim.run(tc, shots=shots, noise_model=nm).result()
+    counts = res.get_counts()
+
+    failX = failZ = total = 0
+    for bitstr, n in counts.items():
+        lx, lz = decode_one_shot(bitstr, k=k)
+        failX += lx * n
+        failZ += lz * n
+        total += n
+    return failX/max(1,total), failZ/max(1,total)
+
+
+def logical_failure_rates_spacetime(
+    k: int = 3,
+    shots: int = 4000,
+    p1: float = 0.01,
+    ro: float = 0.01,
+) -> tuple[float, float]:
+    """
+    Estimate logical failure rates using space-time MWPM decoding.
+    """
+    sim = AerSimulator()
+    qc = k_rounds_surface_d3(k)
+    tc = transpile(qc, sim, basis_gates=['id','rz','sx','x','h','cx','measure'], optimization_level=1)
+    nm = depol_noise_model(p1=p1, ro=ro)
+
+    res = sim.run(tc, shots=shots, noise_model=nm).result()
+    counts = res.get_counts()
+
+    failX = failZ = total = 0
+    for bitstr, n in counts.items():
+        lx, lz = decode_spacetime_one_shot(bitstr, k)
+        failX += lx * n
+        failZ += lz * n
+        total += n
+
+    return failX/max(1,total), failZ/max(1,total)
+
+
+def compare_single_vs_spacetime(
+    p_vals,
+    k_space_time: int = 3,
+    k_single: int = 1,
+    shots: int = 6000,
+    ro: float = 0.01,
+):
+    """
+    Compare logical failure rates for single-round and space-time decoding
+    across a range of physical error rates.
+    """
+    pLX_1, pLZ_1, pLX_ST, pLZ_ST = [], [], [], []
+    for p in p_vals:
+
+        # single-round baseline
+        fx1, fz1 = logical_failure_rates_single(k=k_single, shots=shots, p1=p, ro=ro)
+        pLX_1.append(fx1); pLZ_1.append(fz1)
+
+        # space–time decoidng
+        fxst, fzst = logical_failure_rates_spacetime(k=k_space_time, shots=shots, p1=p, ro=ro)
+        pLX_ST.append(fxst); pLZ_ST.append(fzst)
+    return (np.array(p_vals),
+            np.array(pLX_1), np.array(pLZ_1),
+            np.array(pLX_ST), np.array(pLZ_ST))

@@ -7,7 +7,6 @@ Minimum Weight Perfect Matching (MWPM).
 
 import networkx as nx
 from qec.geometry import (
-    d_idx,
     ANC_POS,
     TOP_Y,
     BOT_Y,
