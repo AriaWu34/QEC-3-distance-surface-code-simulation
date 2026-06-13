@@ -2,6 +2,7 @@
 Geometry and indexing utilities for the distance-3 surface code.
 """
 
+DEFAULT_DISTANCE = 3
 
 # Distance-3 code layout constants
 N_DATA = 9
@@ -25,11 +26,11 @@ Z_START = N_DATA + N_X
 # 3 4 5
 # 6 7 8
 
-def d_idx(r: int, c: int) -> int:
+def d_idx(r: int, c: int, distance: int) -> int:
     """
     Convert a 2D data-qubit coordinate into a linear index.
     """
-    return 3 * r + c
+    return distance * r + c
 
 
 # Plaquette definitions for the distance-3 code
@@ -40,6 +41,23 @@ PLAQS = [
     [(1, 1), (1, 2), (2, 1), (2, 2)],
 ]
 
+def generate_plaquettes(distance: int):
+    """
+    Generate all 2x2 plaquettes for a distance-d planar code.
+    """
+    plaqs = []
+
+    for r in range(distance - 1):
+        for c in range(distance - 1):
+            plaqs.append([
+                (r, c),
+                (r, c + 1),
+                (r + 1, c),
+                (r + 1, c + 1),
+            ])
+
+    return plaqs
+
 
 # Ancilla positions for the 4 plaquettes
 ANC_POS = {
@@ -48,6 +66,21 @@ ANC_POS = {
     2: (1.5, 0.5),
     3: (1.5, 1.5),
 }
+
+def generate_ancilla_positions(distance: int):
+    """
+    Generate ancilla coordinates for all plaquettes.
+    """
+    pos = {}
+
+    idx = 0
+
+    for r in range(distance - 1):
+        for c in range(distance - 1):
+            pos[idx] = (r + 0.5, c + 0.5)
+            idx += 1
+
+    return pos
 
 
 # Logical boundaries used by the decoder
