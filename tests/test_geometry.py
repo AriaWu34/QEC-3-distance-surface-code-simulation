@@ -5,6 +5,7 @@ from qec.geometry import (
     code_sizes,
     generate_plaquettes,
     generate_ancilla_positions,
+    code_boundaries
 )
 
 
@@ -49,6 +50,27 @@ def test_code_sizes_d5():
     assert n_x == 16
     assert n_z == 16
 
+
+
+def test_code_boundaries_d3():
+    bounds = code_boundaries(3)
+
+    assert bounds["top"] == -0.5
+    assert bounds["bottom"] == 2.5
+    assert bounds["left"] == -0.5
+    assert bounds["right"] == 2.5
+    assert bounds["span"] == 3.0
+
+
+def test_code_boundaries_d5():
+    bounds = code_boundaries(5)
+
+    assert bounds["top"] == -0.5
+    assert bounds["bottom"] == 4.5
+    assert bounds["left"] == -0.5
+    assert bounds["right"] == 4.5
+    assert bounds["span"] == 5.0
+    
 
 def test_generate_plaquettes_d3():
     assert len(generate_plaquettes(3)) == 4

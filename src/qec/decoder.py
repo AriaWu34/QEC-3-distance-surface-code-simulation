@@ -7,13 +7,10 @@ Minimum Weight Perfect Matching (MWPM).
 
 import networkx as nx
 from qec.geometry import (
-    ANC_POS,
-    TOP_Y,
-    BOT_Y,
-    LEFT_X,
-    RIGHT_X,
-    GRID_SPAN,
     manhattan,
+    generate_ancilla_positions,
+    code_boundaries,
+    code_sizes,
 )
 from qec.syndrome import(
     split_into_rounds,
@@ -23,157 +20,324 @@ from qec.syndrome import(
 )
 
 # Boundary utilities
-def distance_to_vertical_boundary(pos):
-    """Distance to nearest TOP/BOTTOM boundary (use y)."""
-    return min(abs(pos[0]-TOP_Y), abs(pos[0]-BOT_Y))
+def distance_to_vertical_boundary(pos, distance):
+    """
+    Distance to the nearest top or bottom boundary.
+    """
+    bounds = code_boundaries(distance)
 
-def distance_to_horizontal_boundary(pos):
-    """Distance to nearest LEFT/RIGHT boundary (use x)."""
-    return min(abs(pos[1]-LEFT_X), abs(pos[1]-RIGHT_X))
+    return min(
+        abs(pos[0] - bounds["top"]),
+        abs(pos[0] - bounds["bottom"]),
+    )
+
+
+def distance_to_horizontal_boundary(pos, distance):
+    """
+    Distance to the nearest left or right boundary.
+    """
+    bounds = code_boundaries(distance)
+
+    return min(
+        abs(pos[1] - bounds["left"]),
+        abs(pos[1] - bounds["right"]),
+    )
+
 
 # MWPM
-def mwpm_pairs(defect_idxs, boundary_mode):
+def mwpm_pairs(
+    defect_idxs: list[int],
+    boundary_mode: str,
+    distance: int,
+):
     """
-    defect_idxs: list of ancilla indices 0..3
-    boundary_mode: 'vertical' (TOP/BOTTOM) or 'horizontal' (LEFT/RIGHT)
-    returns list of pairs, nodes are 'a{i}' or 'B' (virtual boundary)
+    Match syndrome defects using MWPM.
     """
-    
     if not defect_idxs:
-        return [] 
+        return []
+
+    anc_pos = generate_ancilla_positions(distance)
 
     G = nx.Graph()
     nodes = [f"a{i}" for i in defect_idxs]
-    for u in nodes: G.add_node(u)
 
-    # add boundary node for odd count
+    for u in nodes:
+        G.add_node(u)
+
     add_B = (len(nodes) % 2 == 1)
+
     if add_B:
-        G.add_node('B')
+        G.add_node("B")
 
-    # complete graph among defects
-    for i,u in enumerate(nodes):
-        for j,v in enumerate(nodes):
-            if j <= i: continue
-            w = manhattan(ANC_POS[int(u[1:])], ANC_POS[int(v[1:])])
+    # pairwise defect distances
+    for i, u in enumerate(nodes):
+        for j, v in enumerate(nodes):
+            if j <= i:
+                continue
+
+            w = manhattan(
+                anc_pos[int(u[1:])],
+                anc_pos[int(v[1:])]
+            )
+
             G.add_edge(u, v, weight=w)
 
-    # complete graph among defects
-    for i,u in enumerate(nodes):
-        for j,v in enumerate(nodes):
-            if j <= i: continue
-            w = manhattan(ANC_POS[int(u[1:])], ANC_POS[int(v[1:])])
-            G.add_edge(u, v, weight=w)
-
-    # connect defects to boundary with appropriate distance
+    # connect defects to virtual boundary
     if add_B:
         for u in nodes:
-            pos = ANC_POS[int(u[1:])]
-            w = (distance_to_vertical_boundary(pos) if boundary_mode == 'vertical' 
-                 else distance_to_horizontal_boundary(pos))
-            G.add_edge(u, 'B', weight=w)
+            pos = anc_pos[int(u[1:])]
 
-    matching = nx.algorithms.matching.min_weight_matching(G, weight="weight")
+            if boundary_mode == "vertical":
+                w = distance_to_vertical_boundary(pos, distance)
+            else:
+                w = distance_to_horizontal_boundary(pos, distance)
+
+            G.add_edge(u, "B", weight=w)
+
+    matching = nx.algorithms.matching.min_weight_matching(
+        G,
+        weight="weight"
+    )
+
     if not matching:
         return []
 
-    # matching is a set of 2-tuples or frozensets; normalize to list of tuples
     pairs = []
+
     for e in matching:
-        if len(e) != 2:    # just in case
-            continue
-        u, v = tuple(e)    # works for tuple or frozenset
+        u, v = tuple(e)
         pairs.append((u, v))
+
     return pairs
 
-# Space-time encoding
-def ancilla_pos_3d(idx: int, t: int):
-    r, c = ANC_POS[idx]
+
+# Space-time utilities
+def ancilla_pos_3d(
+    idx: int,
+    t: int,
+    distance: int,
+):
+    """
+    Return the space-time coordinates of an ancilla defect.
+    """
+    anc_pos = generate_ancilla_positions(distance)
+
+    r, c = anc_pos[idx]
+
     return (r, c, t)
 
-def mwpm_3d(defects: list[tuple[int,int]], boundary_mode: str, k: int):
+
+def mwpm_3d(
+    defects,
+    boundary_mode,
+    distance,
+):
     """
-    defects: [(anc_idx, t)] with anc_idx in {0..3}, t in {0..k-2}
-    boundary_mode: 'vertical' (for Z-syndrome → X errors) or 'horizontal' (for X-syndrome → Z errors)
-    returns list of matched pairs; nodes are 'a{idx}_t{t}' or 'B' (boundary)
+    Match space-time syndrome defects using MWPM.
+
+    Defects are connected using Manhattan distance in
+    space-time and may be paired to a virtual boundary.
     """
+    anc_pos = generate_ancilla_positions(distance)
+    bounds = code_boundaries(distance)
+
     G = nx.Graph()
+
     nodes = [f"a{a}_t{t}" for (a, t) in defects]
-    for u in nodes: G.add_node(u)
 
-    # add virtual boundary if odd number of nodes
+    for u in nodes:
+        G.add_node(u)
+
     if len(nodes) % 2 == 1:
-        G.add_node('B')
+        G.add_node("B")
 
-    # complete graph among defects with L1 distance in space-time
+    # Complete graph among defects
     for i, u in enumerate(nodes):
         for j, v in enumerate(nodes):
-            if j <= i: continue
-            ai, ti = map(int, (u.split('_')[0][1:], u.split('_')[1][1:]))
-            aj, tj = map(int, (v.split('_')[0][1:], v.split('_')[1][1:]))
-            (ri, ci, ti), (rj, cj, tj) = ancilla_pos_3d(ai, ti), ancilla_pos_3d(aj, tj)
-            w = abs(ri - rj) + abs(ci - cj) + abs(ti - tj)
+
+            if j <= i:
+                continue
+
+            ai, ti = map(
+                int,
+                (u.split("_")[0][1:], u.split("_")[1][1:]),
+            )
+
+            aj, tj = map(
+                int,
+                (v.split("_")[0][1:], v.split("_")[1][1:]),
+            )
+
+            (ri, ci, ti), (rj, cj, tj) = (
+                ancilla_pos_3d(ai, ti, distance),
+                ancilla_pos_3d(aj, tj, distance),
+            )
+
+            w = (
+                abs(ri - rj)
+                + abs(ci - cj)
+                + abs(ti - tj)
+            )
+
             G.add_edge(u, v, weight=w)
 
-    # connect to spatial boundary (not temporal; shots are fixed-length)
-    if 'B' in G.nodes:
-        for u in nodes:
-            ai, ti = map(int, (u.split('_')[0][1:], u.split('_')[1][1:]))
-            r, c = ANC_POS[ai]
-            if boundary_mode == 'vertical':
-                w = min(abs(r - TOP_Y), abs(r - BOT_Y))
-            else:
-                w = min(abs(c - LEFT_X), abs(c - RIGHT_X))
-            G.add_edge(u, 'B', weight=w)
+    # Connect defects to virtual boundary
+    if "B" in G.nodes:
 
-    matching = nx.algorithms.matching.min_weight_matching(G, weight="weight")
+        for u in nodes:
+
+            ai, ti = map(
+                int,
+                (u.split("_")[0][1:], u.split("_")[1][1:]),
+            )
+
+            r, c = anc_pos[ai]
+
+            if boundary_mode == "vertical":
+                w = min(
+                    abs(r - bounds["top"]),
+                    abs(r - bounds["bottom"]),
+                )
+            else:
+                w = min(
+                    abs(c - bounds["left"]),
+                    abs(c - bounds["right"]),
+                )
+
+            G.add_edge(u, "B", weight=w)
+
+    matching = nx.algorithms.matching.min_weight_matching(
+        G,
+        weight="weight",
+    )
+
     return list(matching) if matching is not None else []
 
+
 # Decoding pipeline
-def decode_one_shot(bitstr, k=1):
+def decode_one_shot(
+    bitstr: str,
+    distance: int,
+    k: int = 1,
+):
     """
-    Returns (logical_X_fail, logical_Z_fail) using the LAST round only.
+    Decode the final syndrome round using MWPM.
     """
-    rounds = split_into_rounds(bitstr, k)
-    Xs, Zs = parse_round_bits(rounds[-1])  # last round
-    # Z-syndrome -> correct X errors -> logical-X test (vertical boundaries)
+    _, n_x, n_z = code_sizes(distance)
+
+    rounds = split_into_rounds(
+        bitstr,
+        k,
+        n_x + n_z,
+    )
+
+    Xs, Zs = parse_round_bits(
+        rounds[-1],
+        n_x,
+    )
+
+    # Z-syndrome -> correct X errors -> logical-X test
     z_def = defects_from_bits(Zs)
-    pairs_xcorr = mwpm_pairs(z_def, boundary_mode='vertical')
-    logX = correction_spans_code(pairs_xcorr, boundary_mode='vertical')
 
-    # X-syndrome -> correct Z errors -> logical-Z test (horizontal boundaries)
+    pairs_xcorr = mwpm_pairs(
+        z_def,
+        boundary_mode="vertical",
+        distance=distance,
+    )
+
+    logX = correction_spans_code(
+        pairs_xcorr,
+        boundary_mode="vertical",
+        distance=distance,
+    )
+
+    # X-syndrome -> correct Z errors -> logical-Z test
     x_def = defects_from_bits(Xs)
-    pairs_zcorr = mwpm_pairs(x_def, boundary_mode='horizontal')
-    logZ = correction_spans_code(pairs_zcorr, boundary_mode='horizontal')
+
+    pairs_zcorr = mwpm_pairs(
+        x_def,
+        boundary_mode="horizontal",
+        distance=distance,
+    )
+
+    logZ = correction_spans_code(
+        pairs_zcorr,
+        boundary_mode="horizontal",
+        distance=distance,
+    )
 
     return int(logX), int(logZ)
 
-def decode_spacetime_one_shot(bitstr: str, k: int) -> tuple[int, int]:
+
+def decode_spacetime_one_shot(
+    bitstr: str,
+    distance: int,
+    k: int,
+) -> tuple[int, int]:
     """
-    Returns (logX, logZ): 1 if logical-X/Z failure is detected, else 0.
+    Decode space-time syndrome defects using MWPM.
     """
-    defects_Z, defects_X = spacetime_defects(bitstr, k)
-    pairs_Z = mwpm_3d(defects_Z, boundary_mode='vertical',   k=k)   # logical-X risk
-    pairs_X = mwpm_3d(defects_X, boundary_mode='horizontal', k=k)   # logical-Z risk
-    logX = correction_spans_code(pairs_Z, 'vertical')
-    logZ = correction_spans_code(pairs_X, 'horizontal')
+    defects_Z, defects_X = spacetime_defects(
+        bitstr,
+        distance,
+        k,
+    )
+
+    pairs_Z = mwpm_3d(
+        defects_Z,
+        boundary_mode="vertical",
+        distance=distance,
+    )
+
+    pairs_X = mwpm_3d(
+        defects_X,
+        boundary_mode="horizontal",
+        distance=distance,
+    )
+
+    logX = correction_spans_code(
+        pairs_Z,
+        boundary_mode="vertical",
+        distance=distance,
+    )
+
+    logZ = correction_spans_code(
+        pairs_X,
+        boundary_mode="horizontal",
+        distance=distance,
+    )
+
     return int(logX), int(logZ)
+
 
 # Logical checks
-def correction_spans_code(pairs, boundary_mode: str) -> bool:
+def correction_spans_code(
+    pairs,
+    boundary_mode: str,
+    distance: int,
+) -> bool:
     """
-    crude homology test for d=3:
-    return True if any correction pair likely spans across the code in the relevant direction.
+    Determine whether a matched correction chain spans the code.
+
+    Used as a simple logical-failure heuristic.
     """
+
+    bounds = code_boundaries(distance)
+    anc_pos = generate_ancilla_positions(distance)
+
     for u, v in pairs:
         def axis(node):
-            if node == 'B':
-                return TOP_Y if boundary_mode == 'vertical' else LEFT_X
-            idx = int(node.split('_')[0][1:])
-            pos = ANC_POS[idx]
-            return pos[0] if boundary_mode == 'vertical' else pos[1]
+            if node == "B":
+                return (
+                    bounds["top"]
+                    if boundary_mode == "vertical"
+                    else bounds["left"]
+                )
+            idx = int(node.split("_")[0][1:])
+            pos = anc_pos[idx]
+            return pos[0] if boundary_mode == "vertical" else pos[1]
 
         a, b = axis(u), axis(v)
-        if abs(a - b) >= (GRID_SPAN - 1.0):
+        if abs(a - b) >= (bounds["span"] - 1.0):
             return True
     return False

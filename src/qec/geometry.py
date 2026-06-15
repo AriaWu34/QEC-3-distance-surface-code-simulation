@@ -104,3 +104,18 @@ def manhattan(p: tuple, q: tuple) -> float:
     Manhattan distance between two coordinates.
     """
     return abs(p[0] - q[0]) + abs(p[1] - q[1])
+
+def code_boundaries(distance: int):
+    """
+    Return decoder boundary coordinates.
+    """
+    low = -0.5
+    high = distance - 0.5
+
+    return {
+        "top": low,
+        "bottom": high,
+        "left": low,
+        "right": high,
+        "span": float(distance),
+    }
