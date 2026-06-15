@@ -72,7 +72,7 @@ def k_rounds_surface_code(distance: int = 3, k: int = 1) -> QuantumCircuit:
         # simple memory error opportunity on data (lets 'id' pick up depolarizing)
         for q in range(n_data): 
             qc.id(q)
-        syn = ClassicalRegister(n_x + n_z, f"syn_{r}")  # 8 bits for this round
+        syn = ClassicalRegister(n_x + n_z, f"syn_{r}")
         qc.add_register(syn)
 
         # --- X stabilizers: ancilla -> data (H, CNOTs, H, measure), reset ancilla
@@ -95,9 +95,3 @@ def k_rounds_surface_code(distance: int = 3, k: int = 1) -> QuantumCircuit:
             qc.measure(qreg[a], syn[n_x + s])  # Z syndrome bit s
 
     return qc
-
-def one_round_surface_d3():
-    return one_round_surface_code(distance=3)
-
-def k_rounds_surface_d3(k: int):
-    return k_rounds_surface_code(distance=3, k=k)
