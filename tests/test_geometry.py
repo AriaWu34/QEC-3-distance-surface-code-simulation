@@ -2,9 +2,7 @@ from qec.geometry import (
     d_idx,
     manhattan,
     ANC_POS,
-    N_DATA,
-    N_X,
-    N_Z,
+    code_sizes,
     generate_plaquettes,
     generate_ancilla_positions,
 )
@@ -36,10 +34,20 @@ def test_ancilla_positions():
     assert ANC_POS[3] == (1.5, 1.5)
 
 
-def test_code_constants():
-    assert N_DATA == 9
-    assert N_X == 4
-    assert N_Z == 4
+def test_code_sizes_d3():
+    n_data, n_x, n_z = code_sizes(3)
+
+    assert n_data == 9
+    assert n_x == 4
+    assert n_z == 4
+
+
+def test_code_sizes_d5():
+    n_data, n_x, n_z = code_sizes(5)
+
+    assert n_data == 25
+    assert n_x == 16
+    assert n_z == 16
 
 
 def test_generate_plaquettes_d3():
