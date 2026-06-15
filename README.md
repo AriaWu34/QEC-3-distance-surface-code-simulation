@@ -2,13 +2,13 @@
 
 A Python-based quantum error correction (QEC) simulator built with Qiskit, focused on syndrome extraction, noise modelling, and Minimum Weight Perfect Matching (MWPM) decoding for topological quantum error-correcting codes.
 
-The current implementation includes a distance-3 planar surface code with syndrome extraction, noise modelling, and MWPM-based decoding. The project is being extended towards larger code distances, threshold studies, and alternative decoder backends.
+The current implementation supports configurable planar surface-code distances with multi-round syndrome extraction, noise modelling, and MWPM-based decoding. The project is being developed into a modular quantum error correction research platform for threshold studies, decoder benchmarking, and alternative decoder backends.
 
 ---
 
 ## Features
 
-- Distance-3 planar surface code
+- Configurable odd code distances (d = 3, 5, 7, ...)
 - Multi-round syndrome extraction
 - MWPM decoding
 - Space-time decoding
@@ -39,9 +39,10 @@ results/
 
 tests/
 ├── test_geometry.py
+├── test_circuit.py
 ├── test_syndrome.py
 ├── test_decoder.py
-└── test_circuit.py
+└── test_simulation.py
 
 notebooks/
 ├── demo.ipynb
@@ -85,7 +86,7 @@ pytest
 
 ## Future Work
 
-- Configurable code distances (d = 3, 5, 7, ...)
+- Improved logical-failure detection
 - Threshold analysis
 - Stim integration
 - PyMatching backend
