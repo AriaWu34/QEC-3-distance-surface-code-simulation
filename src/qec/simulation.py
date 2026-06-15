@@ -10,7 +10,7 @@ import numpy as np
 from qiskit import transpile
 from qiskit_aer import AerSimulator
 
-from qec.circuit import k_rounds_surface_d3
+from qec.circuit import k_rounds_surface_code
 from qec.noise import depol_noise_model
 from qec.decoder import (
     decode_one_shot,
@@ -18,18 +18,20 @@ from qec.decoder import (
 )
 
 def logical_failure_rates_single(
+    distance: int = 3,
     k: int = 1,
     shots: int = 4000,
     p1: float = 0.01,
     ro: float = 0.0,
 ) -> tuple[float, float]:
     """
-    Estimate logical failure rates using last-round-only decoding.
+    Estimate logical failure rates for a planar surface code
+    using last-round-only decoding.
     """
         
     sim = AerSimulator()
-    qc = k_rounds_surface_d3(k)
-    tc = transpile(qc, sim, basis_gates=['id','rz','sx','x','h','cx','measure'],
+    qc = k_rounds_surface_code(distance=distance, k=k)
+    tc = transpile(qc, basis_gates=['id','rz','sx','x','h','cx','measure'],
                    optimization_level=1)
     nm = depol_noise_model(p1=p1, ro=ro)
 
@@ -38,7 +40,7 @@ def logical_failure_rates_single(
 
     failX = failZ = total = 0
     for bitstr, n in counts.items():
-        lx, lz = decode_one_shot(bitstr, k=k)
+        lx, lz = decode_one_shot(bitstr, distance=distance, k=k)
         failX += lx * n
         failZ += lz * n
         total += n
@@ -46,17 +48,19 @@ def logical_failure_rates_single(
 
 
 def logical_failure_rates_spacetime(
+    distance: int = 3,
     k: int = 3,
     shots: int = 4000,
     p1: float = 0.01,
     ro: float = 0.01,
 ) -> tuple[float, float]:
     """
-    Estimate logical failure rates using space-time MWPM decoding.
+    Estimate logical failure rates for a planar surface code
+    using space-time MWPM decoding.
     """
     sim = AerSimulator()
-    qc = k_rounds_surface_d3(k)
-    tc = transpile(qc, sim, basis_gates=['id','rz','sx','x','h','cx','measure'], optimization_level=1)
+    qc = k_rounds_surface_code(distance=distance, k=k)
+    tc = transpile(qc, basis_gates=['id','rz','sx','x','h','cx','measure'], optimization_level=1)
     nm = depol_noise_model(p1=p1, ro=ro)
 
     res = sim.run(tc, shots=shots, noise_model=nm).result()
@@ -64,7 +68,7 @@ def logical_failure_rates_spacetime(
 
     failX = failZ = total = 0
     for bitstr, n in counts.items():
-        lx, lz = decode_spacetime_one_shot(bitstr, k)
+        lx, lz = decode_spacetime_one_shot(bitstr, distance=distance, k=k)
         failX += lx * n
         failZ += lz * n
         total += n
@@ -78,6 +82,7 @@ def compare_single_vs_spacetime(
     k_single: int = 1,
     shots: int = 6000,
     ro: float = 0.01,
+    distance: int = 3,
 ):
     """
     Compare logical failure rates for single-round and space-time decoding
@@ -87,11 +92,23 @@ def compare_single_vs_spacetime(
     for p in p_vals:
 
         # single-round baseline
-        fx1, fz1 = logical_failure_rates_single(k=k_single, shots=shots, p1=p, ro=ro)
+        fx1, fz1 = logical_failure_rates_single(
+            distance=distance,
+            k=k_single,
+            shots=shots,
+            p1=p,
+            ro=ro,
+        )
         pLX_1.append(fx1); pLZ_1.append(fz1)
 
         # space–time decoidng
-        fxst, fzst = logical_failure_rates_spacetime(k=k_space_time, shots=shots, p1=p, ro=ro)
+        fxst, fzst = logical_failure_rates_spacetime(
+            distance=distance,
+            k=k_space_time,
+            shots=shots,
+            p1=p,
+            ro=ro,
+        )
         pLX_ST.append(fxst); pLZ_ST.append(fzst)
     return (np.array(p_vals),
             np.array(pLX_1), np.array(pLZ_1),
