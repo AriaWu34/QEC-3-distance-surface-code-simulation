@@ -1,8 +1,13 @@
 """
-MWPM decoding utilities for surface-code simulations.
+MWPM decoder implementation for surface-code simulations.
 
-Provides 2D and space-time matching decoders based on
-Minimum Weight Perfect Matching (MWPM).
+This module provides Minimum Weight Perfect Matching (MWPM)
+decoding utilities for both single-round and space-time
+syndrome decoding.
+
+Future decoder backends (e.g. PyMatching and Union-Find)
+will implement the same decoder interface defined in
+qec.decoders.base.
 """
 
 import networkx as nx
@@ -12,12 +17,41 @@ from qec.geometry import (
     code_boundaries,
     code_sizes,
 )
-from qec.syndrome import(
-    split_into_rounds,
-    parse_round_bits,
-    defects_from_bits,
-    spacetime_defects
-)
+from qec.decoders.base import Decoder
+
+
+class MWPMDecoder(Decoder):
+    """
+    Reference MWPM decoder implementation.
+
+    Wraps the existing decoding pipeline behind the common
+    Decoder interface.
+    """
+
+    def decode(
+        self,
+        bitstr: str,
+        distance: int,
+        k: int = 1,
+    ) -> tuple[int, int]:
+        return decode_one_shot(
+            bitstr=bitstr,
+            distance=distance,
+            k=k,
+        )
+
+    def decode_spacetime(
+        self,
+        bitstr: str,
+        distance: int,
+        k: int,
+    ) -> tuple[int, int]:
+        return decode_spacetime_one_shot(
+            bitstr=bitstr,
+            distance=distance,
+            k=k,
+        )
+    
 
 # Boundary utilities
 def distance_to_vertical_boundary(pos, distance):
@@ -213,6 +247,13 @@ def mwpm_3d(
 
     return list(matching) if matching is not None else []
 
+
+from qec.syndrome import(
+    split_into_rounds,
+    parse_round_bits,
+    defects_from_bits,
+    spacetime_defects
+)
 
 # Decoding pipeline
 def decode_one_shot(
