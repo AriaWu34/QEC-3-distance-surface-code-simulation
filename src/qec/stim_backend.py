@@ -52,7 +52,10 @@ class SurfaceCodeStimBackend:
 
         self.n_data, self.n_x, self.n_z = code_sizes(distance)
 
-        self.measurements: list[StabilizerMeasurement] = []
+        self.measurements: dict[
+            tuple[int, int],
+            StabilizerMeasurement,
+        ] = {}
 
     @property
     def n_qubits(self) -> int:
@@ -87,6 +90,37 @@ class SurfaceCodeStimBackend:
         """
 
         self.measurements.clear()
+    
+    def record_measurement(
+        self,
+        round_idx: int,
+        stabilizer_idx: int,
+        record_idx: int,
+    ) -> None:
+        """
+        Store stabilizer measurement metadata.
+        """
+
+        self.measurements[
+            (round_idx, stabilizer_idx)
+        ] = StabilizerMeasurement(
+            round_idx=round_idx,
+            stabilizer_idx=stabilizer_idx,
+            record_idx=record_idx,
+        )
+
+    def get_measurement(
+        self,
+        round_idx: int,
+        stabilizer_idx: int,
+    ) -> StabilizerMeasurement:
+        """
+        Retrieve a recorded stabilizer measurement.
+        """
+
+        return self.measurements[
+            (round_idx, stabilizer_idx)
+        ]
 
     def data_idx(
         self,
@@ -152,7 +186,9 @@ class SurfaceCodeStimBackend:
     def add_syndrome_round(
         self,
         circuit: stim.Circuit,
-    ) -> None:
+        round_idx: int,
+        record_idx: int,
+    ) -> int:
         """
         Add one round of syndrome extraction.
         """
@@ -173,6 +209,14 @@ class SurfaceCodeStimBackend:
                 plaquette,
             )
 
+            self.record_measurement(
+                round_idx=round_idx,
+                stabilizer_idx=s,
+                record_idx=record_idx,
+            )
+
+            record_idx += 1
+
         # Z stabilizers
         for s, plaquette in enumerate(self.plaquettes):
 
@@ -184,12 +228,25 @@ class SurfaceCodeStimBackend:
                 plaquette,
             )
 
+            stabilizer_idx = len(self.plaquettes) + s
+
+            self.record_measurement(
+                round_idx=round_idx,
+                stabilizer_idx=stabilizer_idx,
+                record_idx=record_idx,
+            )
+
+            record_idx += 1
+
+        return record_idx
+
     def build_circuit(self) -> stim.Circuit:
         """
         Build a Stim surface-code circuit.
         """
 
         self.reset_measurements()
+        record_idx = 0
 
         circuit = stim.Circuit()
 
@@ -198,8 +255,13 @@ class SurfaceCodeStimBackend:
             range(self.n_qubits),
         )
 
-        for _ in range(self.rounds):
-            self.add_syndrome_round(circuit)
+        for round_idx in range(self.rounds):
+
+            record_idx = self.add_syndrome_round(
+                circuit,
+                round_idx,
+                record_idx,
+            )
 
         return circuit
 
