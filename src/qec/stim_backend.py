@@ -157,6 +157,11 @@ class SurfaceCodeStimBackend:
         Add one round of syndrome extraction.
         """
 
+        circuit.append(
+            "R",
+            self.ancilla_indices,
+        )
+
         # X stabilizers
         for s, plaquette in enumerate(self.plaquettes):
 
