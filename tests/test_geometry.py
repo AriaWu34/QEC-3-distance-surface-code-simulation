@@ -1,3 +1,4 @@
+import pytest
 from qec.geometry import (
     d_idx,
     manhattan,
@@ -5,7 +6,8 @@ from qec.geometry import (
     code_sizes,
     generate_plaquettes,
     generate_ancilla_positions,
-    code_boundaries
+    code_boundaries,
+    validate_distance,
 )
 
 
@@ -71,6 +73,17 @@ def test_code_boundaries_d5():
     assert bounds["right"] == 4.5
     assert bounds["span"] == 5.0
     
+
+def test_validate_distance_rejects_invalid():
+    with pytest.raises(ValueError):
+        validate_distance(2)
+
+    with pytest.raises(ValueError):
+        validate_distance(4)
+
+    with pytest.raises(ValueError):
+        validate_distance(0)    
+
 
 def test_generate_plaquettes_d3():
     assert len(generate_plaquettes(3)) == 4

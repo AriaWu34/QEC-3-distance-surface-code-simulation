@@ -105,6 +105,7 @@ def manhattan(p: tuple, q: tuple) -> float:
     """
     return abs(p[0] - q[0]) + abs(p[1] - q[1])
 
+
 def code_boundaries(distance: int):
     """
     Return decoder boundary coordinates.
@@ -119,3 +120,10 @@ def code_boundaries(distance: int):
         "right": high,
         "span": float(distance),
     }
+
+
+def validate_distance(distance: int):
+    if distance < 3 or distance % 2 == 0:
+        raise ValueError(
+            "Distance must be an odd integer >= 3."
+        )
