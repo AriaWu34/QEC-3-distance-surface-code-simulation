@@ -135,7 +135,7 @@ class SurfaceCodeStimBackend:
         """
 
         self.measurements.clear()
-        self.data_measurement_records
+        self.data_measurement_records.clear()
     
     def record_measurement(
         self,
@@ -195,6 +195,22 @@ class SurfaceCodeStimBackend:
 
         return (
             measurement.record_idx
+            - current_record_idx
+            - 1
+        )
+    
+    def rec_offset_from_record(
+        self,
+        record_idx: int,
+        current_record_idx: int,
+    ) -> int:
+        """
+        Convert a raw measurement record index
+        into a Stim REC offset.
+        """
+
+        return (
+            record_idx
             - current_record_idx
             - 1
         )
@@ -414,6 +430,11 @@ class SurfaceCodeStimBackend:
             record_idx,
         )
 
+        self.add_logical_z_observable(
+            circuit,
+            record_idx - 1,
+        )
+
         return circuit
 
     def detector_error_model(
@@ -461,3 +482,32 @@ class SurfaceCodeStimBackend:
             record_idx += 1
 
         return record_idx
+    
+    def add_logical_z_observable(
+        self,
+        circuit: stim.Circuit,
+        current_record_idx: int,
+    ) -> None:
+        
+        targets: list[stim.GateTarget] = []
+
+        for q in self.logical_z_chain():
+
+            record_idx = (
+                self.data_measurement_records[q]
+            )
+
+            targets.append(
+                stim.target_rec(
+                    self.rec_offset_from_record(
+                        record_idx,
+                        current_record_idx,
+                    )
+                )
+            )
+
+        circuit.append(
+            "OBSERVABLE_INCLUDE",
+            targets,
+            0,
+        )

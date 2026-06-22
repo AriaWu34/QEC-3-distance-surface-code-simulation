@@ -216,3 +216,35 @@ def test_logical_chains_use_valid_data_qubits():
         + backend.logical_x_chain()
     ):
         assert q in backend.data_indices
+
+
+# ================
+# Observable tests
+# ================
+
+def test_observable_present():
+    backend = SurfaceCodeStimBackend(
+        distance=3
+    )
+
+    circuit = backend.build_circuit()
+
+    assert (
+        "OBSERVABLE_INCLUDE"
+        in str(circuit)
+    )
+
+
+def test_data_measurements_recorded():
+    backend = SurfaceCodeStimBackend(
+        distance=3
+    )
+
+    backend.build_circuit()
+
+    assert (
+        len(
+            backend.data_measurement_records
+        )
+        == backend.n_data
+    )
