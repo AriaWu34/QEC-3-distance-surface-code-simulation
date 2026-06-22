@@ -218,21 +218,22 @@ def test_logical_chains_use_valid_data_qubits():
         assert q in backend.data_indices
 
 
-# ================
-# Observable tests
-# ================
+# ========================
+# Logical observable tests
+# ========================
 
-def test_observable_present():
+def test_observables_present():
     backend = SurfaceCodeStimBackend(
         distance=3
     )
 
     circuit = backend.build_circuit()
 
-    assert (
+    observable_count = str(circuit).count(
         "OBSERVABLE_INCLUDE"
-        in str(circuit)
     )
+
+    assert observable_count == 2
 
 
 def test_data_measurements_recorded():

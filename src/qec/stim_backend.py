@@ -435,6 +435,11 @@ class SurfaceCodeStimBackend:
             record_idx - 1,
         )
 
+        self.add_logical_x_observable(
+            circuit,
+            record_idx - 1,
+        )
+
         return circuit
 
     def detector_error_model(
@@ -510,4 +515,33 @@ class SurfaceCodeStimBackend:
             "OBSERVABLE_INCLUDE",
             targets,
             0,
+        )
+
+    def add_logical_x_observable(
+        self,
+        circuit: stim.Circuit,
+        current_record_idx: int,
+    ) -> None:
+
+        targets: list[stim.GateTarget] = []
+
+        for q in self.logical_x_chain():
+
+            record_idx = (
+                self.data_measurement_records[q]
+            )
+
+            targets.append(
+                stim.target_rec(
+                    self.rec_offset_from_record(
+                        record_idx,
+                        current_record_idx,
+                    )
+                )
+            )
+
+        circuit.append(
+            "OBSERVABLE_INCLUDE",
+            targets,
+            1,
         )
