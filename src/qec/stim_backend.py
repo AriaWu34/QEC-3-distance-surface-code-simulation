@@ -136,6 +136,22 @@ class SurfaceCodeStimBackend:
             col,
             self.distance,
         )
+    
+    def rec_offset(
+        self,
+        measurement: StabilizerMeasurement,
+        current_record_idx: int,
+    ) -> int:
+        """
+        Convert an absolute record index into
+        a Stim REC offset.
+        """
+
+        return (
+            measurement.record_idx
+            - current_record_idx
+            - 1
+        )
 
     def add_x_stabilizer(
         self,
@@ -239,6 +255,48 @@ class SurfaceCodeStimBackend:
             record_idx += 1
 
         return record_idx
+        
+    def add_round_detectors(
+        self,
+        circuit: stim.Circuit,
+        round_idx: int,
+        current_record_idx: int,
+    ) -> None:
+
+        if round_idx == 0:
+            return
+
+        for stabilizer_idx in range(
+            self.n_stabilizers
+        ):
+
+            prev = self.get_measurement(
+                round_idx - 1,
+                stabilizer_idx,
+            )
+
+            curr = self.get_measurement(
+                round_idx,
+                stabilizer_idx,
+            )
+
+            circuit.append(
+                "DETECTOR",
+                [
+                    stim.target_rec(
+                        self.rec_offset(
+                            prev,
+                            current_record_idx,
+                        )
+                    ),
+                    stim.target_rec(
+                        self.rec_offset(
+                            curr,
+                            current_record_idx,
+                        )
+                    ),
+                ],
+            )
 
     def build_circuit(self) -> stim.Circuit:
         """
@@ -261,6 +319,12 @@ class SurfaceCodeStimBackend:
                 circuit,
                 round_idx,
                 record_idx,
+            )
+
+            self.add_round_detectors(
+                circuit,
+                round_idx,
+                record_idx - 1,
             )
 
         return circuit

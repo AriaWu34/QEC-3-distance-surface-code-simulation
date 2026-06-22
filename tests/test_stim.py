@@ -49,3 +49,13 @@ def test_invalid_rounds():
             distance=3,
             rounds=0,
         )
+
+def test_detectors_added():
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        rounds=2,
+    )
+
+    circuit = backend.build_circuit()
+
+    assert "DETECTOR" in str(circuit)
