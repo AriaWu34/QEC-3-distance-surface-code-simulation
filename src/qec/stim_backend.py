@@ -66,6 +66,11 @@ class SurfaceCodeStimBackend:
             StabilizerMeasurement,
         ] = {}
 
+        self.data_measurement_records: dict[
+            int,
+            int,
+        ] = {}
+
     @property
     def n_qubits(self) -> int:
         return self.n_data + self.n_x + self.n_z
@@ -130,6 +135,7 @@ class SurfaceCodeStimBackend:
         """
 
         self.measurements.clear()
+        self.data_measurement_records
     
     def record_measurement(
         self,
@@ -402,6 +408,11 @@ class SurfaceCodeStimBackend:
                 round_idx,
                 record_idx - 1,
             )
+        
+        record_idx = self.add_final_data_measurements(
+            circuit,
+            record_idx,
+        )
 
         return circuit
 
@@ -413,3 +424,40 @@ class SurfaceCodeStimBackend:
         """
 
         return self.build_circuit().detector_error_model()
+    
+    def logical_z_chain(self) -> list[int]:
+        """
+        Data qubits forming the logical Z operator.
+        """
+
+        return [
+            self.data_idx(r, 0)
+            for r in range(self.distance)
+        ]
+    
+    def logical_x_chain(self) -> list[int]:
+        """
+        Data qubits forming the logical X operator.
+        """
+
+        return [
+            self.data_idx(0, c)
+            for c in range(self.distance)
+        ]
+    
+    def add_final_data_measurements(
+        self,
+        circuit: stim.Circuit,
+        record_idx: int,
+    ) -> int:
+        
+        circuit.append(
+            "M",
+            self.data_indices,
+        )
+
+        for q in self.data_indices:
+            self.data_measurement_records[q] = record_idx
+            record_idx += 1
+
+        return record_idx

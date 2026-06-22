@@ -165,3 +165,54 @@ def test_stabilizer_metadata_mapping():
             "X",
             "Z",
         }
+
+
+# =========================
+# Logical operator tests
+# =========================
+
+def test_logical_z_chain_length():
+    backend = SurfaceCodeStimBackend(
+        distance=3
+    )
+
+    chain = backend.logical_z_chain()
+
+    assert len(chain) == backend.distance
+
+
+def test_logical_x_chain_length():
+    backend = SurfaceCodeStimBackend(
+        distance=5
+    )
+
+    chain = backend.logical_x_chain()
+
+    assert len(chain) == backend.distance
+
+
+def test_final_data_measurements_recorded():
+    backend = SurfaceCodeStimBackend(
+        distance=3
+    )
+
+    backend.build_circuit()
+
+    assert (
+        len(
+            backend.data_measurement_records
+        )
+        == backend.n_data
+    )
+
+
+def test_logical_chains_use_valid_data_qubits():
+    backend = SurfaceCodeStimBackend(
+        distance=3
+    )
+
+    for q in (
+        backend.logical_z_chain()
+        + backend.logical_x_chain()
+    ):
+        assert q in backend.data_indices
