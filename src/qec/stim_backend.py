@@ -27,6 +27,15 @@ class StabilizerMeasurement:
     stabilizer_idx: int
     record_idx: int
 
+@dataclass(frozen=True)
+class StabilizerInfo:
+    """
+    Metadata describing a stabilizer.
+    """
+
+    stabilizer_idx: int
+    plaquette_idx: int
+    stabilizer_type: str
 
 class SurfaceCodeStimBackend:
     """
@@ -83,6 +92,37 @@ class SurfaceCodeStimBackend:
     @property
     def n_stabilizers(self) -> int:
         return len(self.plaquettes) * 2
+    
+    def get_stabilizer_info(
+        self,
+        stabilizer_idx: int,
+    ) -> StabilizerInfo:
+        """
+        Return metadata for a stabilizer.
+        """
+        
+        if not (
+            0 <= stabilizer_idx < self.n_stabilizers
+        ):
+            raise ValueError(
+                f"Invalid stabilizer index: "
+                f"{stabilizer_idx}"
+            )
+
+        n = len(self.plaquettes)
+
+        if stabilizer_idx < n:
+            return StabilizerInfo(
+                stabilizer_idx=stabilizer_idx,
+                plaquette_idx=stabilizer_idx,
+                stabilizer_type="X",
+            )
+
+        return StabilizerInfo(
+            stabilizer_idx=stabilizer_idx,
+            plaquette_idx=stabilizer_idx - n,
+            stabilizer_type="Z",
+        )
 
     def reset_measurements(self) -> None:
         """
@@ -151,6 +191,18 @@ class SurfaceCodeStimBackend:
             measurement.record_idx
             - current_record_idx
             - 1
+        )
+    
+    def plaquette_center(
+        self,
+        plaquette,
+    ):
+        rows = [r for r, _ in plaquette]
+        cols = [c for _, c in plaquette]
+
+        return (
+            sum(rows) / len(rows),
+            sum(cols) / len(cols),
         )
 
     def add_x_stabilizer(
@@ -280,6 +332,24 @@ class SurfaceCodeStimBackend:
                 stabilizer_idx,
             )
 
+            info = self.get_stabilizer_info(
+                stabilizer_idx
+            )
+
+            plaquette = self.plaquettes[
+                info.plaquette_idx
+            ]
+
+            x, y = self.plaquette_center(
+                plaquette
+            )
+
+            basis = (
+                0.0
+                if info.stabilizer_type == "X"
+                else 1.0
+            )
+
             circuit.append(
                 "DETECTOR",
                 [
@@ -295,6 +365,12 @@ class SurfaceCodeStimBackend:
                             current_record_idx,
                         )
                     ),
+                ],
+                [
+                    x,
+                    y,
+                    float(round_idx),
+                    basis,
                 ],
             )
 
