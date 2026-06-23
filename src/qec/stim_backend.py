@@ -89,7 +89,7 @@ class SurfaceCodeStimBackend:
 
     @property
     def n_qubits(self) -> int:
-        return self.n_data + self.n_x + self.n_z
+        return self.n_data + self.n_stabilizers
 
     @property
     def x_ancilla_start(self) -> int:
@@ -114,6 +114,11 @@ class SurfaceCodeStimBackend:
     def n_stabilizers(self):
         return len(self.stabilizers)
     
+    @property
+    def stabilizer_ancilla_start(self) -> int:
+        return self.n_data
+    
+
     def get_stabilizer_info(
         self,
         stabilizer_idx: int,
@@ -320,50 +325,47 @@ class SurfaceCodeStimBackend:
             self.ancilla_indices,
         )
 
-        # X stabilizers
-        for s, plaquette in enumerate(self.plaquettes):
+        for stabilizer in self.stabilizers:
 
-            ancilla = self.x_ancilla_start + s
-
-            self.add_x_stabilizer(
-                circuit,
-                ancilla,
-                plaquette,
+            ancilla = (
+                self.stabilizer_ancilla_start
+                + stabilizer.stabilizer_idx
             )
+
+            plaquette = self.plaquettes[
+                stabilizer.plaquette_idx
+            ]
+
+            if stabilizer.stabilizer_type == "X":
+
+                self.add_x_stabilizer(
+                    circuit,
+                    ancilla,
+                    plaquette,
+                )
+
+            else:
+
+                self.add_z_stabilizer(
+                    circuit,
+                    ancilla,
+                    plaquette,
+                )
 
             self.record_measurement(
                 round_idx=round_idx,
-                stabilizer_idx=s,
+                stabilizer_idx=(
+                    stabilizer.stabilizer_idx
+                ),
                 record_idx=record_idx,
             )
 
             record_idx += 1
 
-        # Z stabilizers
-        for s, plaquette in enumerate(self.plaquettes):
-
-            ancilla = self.z_ancilla_start + s
-
-            self.add_z_stabilizer(
-                circuit,
-                ancilla,
-                plaquette,
-            )
-
-            stabilizer_idx = len(self.plaquettes) + s
-
-            self.record_measurement(
-                round_idx=round_idx,
-                stabilizer_idx=stabilizer_idx,
-                record_idx=record_idx,
-            )
-
-            self.add_depolarizing_noise(
-                circuit,
-                self.data_indices,
-            )
-
-            record_idx += 1
+        self.add_depolarizing_noise(
+            circuit,
+            self.data_indices,
+        )
 
         return record_idx
         

@@ -15,7 +15,7 @@ def test_build_circuit_d3():
 
     circuit = backend.build_circuit()
 
-    assert circuit.num_qubits == 17
+    assert circuit.num_qubits == 13
 
 
 def test_build_circuit_d5():
@@ -26,7 +26,7 @@ def test_build_circuit_d5():
 
     circuit = backend.build_circuit()
 
-    assert circuit.num_qubits == 57
+    assert circuit.num_qubits == 41
 
 
 def test_multiple_rounds_build():
@@ -37,7 +37,7 @@ def test_multiple_rounds_build():
 
     circuit = backend.build_circuit()
 
-    assert circuit.num_qubits == 17
+    assert circuit.num_qubits == 13
 
 
 # =========================
@@ -184,7 +184,23 @@ def test_checkerboard_stabilizer_types_d3():
         "Z",
         "X",
     ]
-    
+
+
+def test_d3_stabilizer_count():
+    backend = SurfaceCodeStimBackend(
+        distance=3
+    )
+
+    assert backend.n_stabilizers == 4
+
+
+def test_d5_stabilizer_count():
+    backend = SurfaceCodeStimBackend(
+        distance=5
+    )
+
+    assert backend.n_stabilizers == 16
+
 
 # =========================
 # Logical operator tests
