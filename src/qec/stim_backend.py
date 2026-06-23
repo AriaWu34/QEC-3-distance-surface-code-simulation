@@ -12,6 +12,7 @@ import stim
 from qec.geometry import (
     d_idx,
     code_sizes,
+    generate_stabilizer_layout,
     generate_plaquettes,
     validate_distance,
 )
@@ -34,8 +35,8 @@ class StabilizerInfo:
     """
 
     stabilizer_idx: int
-    plaquette_idx: int
     stabilizer_type: str
+    plaquette_idx: int
 
 class SurfaceCodeStimBackend:
     """
@@ -69,6 +70,8 @@ class SurfaceCodeStimBackend:
         self.rounds = rounds
         self.depolarizing_error = depolarizing_error
         self.readout_error = readout_error
+
+        self.stabilizers = generate_stabilizer_layout(distance)
 
         self.plaquettes = generate_plaquettes(distance)
 
@@ -108,38 +111,38 @@ class SurfaceCodeStimBackend:
         return range(self.n_data)
 
     @property
-    def n_stabilizers(self) -> int:
-        return len(self.plaquettes) * 2
+    def n_stabilizers(self):
+        return len(self.stabilizers)
     
     def get_stabilizer_info(
         self,
         stabilizer_idx: int,
     ) -> StabilizerInfo:
         """
-        Return metadata for a stabilizer.
+        Return metadata for a stabilizer in the
+        checkerboard layout.
+
+        Provides the stabilizer type (X or Z)
+        and the associated plaquette index.
         """
-        
+
         if not (
-            0 <= stabilizer_idx < self.n_stabilizers
+            0 <= stabilizer_idx
+            < len(self.stabilizers)
         ):
             raise ValueError(
                 f"Invalid stabilizer index: "
                 f"{stabilizer_idx}"
             )
 
-        n = len(self.plaquettes)
-
-        if stabilizer_idx < n:
-            return StabilizerInfo(
-                stabilizer_idx=stabilizer_idx,
-                plaquette_idx=stabilizer_idx,
-                stabilizer_type="X",
-            )
+        stabilizer = self.stabilizers[
+            stabilizer_idx
+        ]
 
         return StabilizerInfo(
-            stabilizer_idx=stabilizer_idx,
-            plaquette_idx=stabilizer_idx - n,
-            stabilizer_type="Z",
+            stabilizer_idx=stabilizer.stabilizer_idx,
+            stabilizer_type=stabilizer.stabilizer_type,
+            plaquette_idx=stabilizer.plaquette_idx,
         )
 
     def reset_measurements(self) -> None:

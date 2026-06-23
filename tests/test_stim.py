@@ -124,12 +124,10 @@ def test_get_stabilizer_info_z():
         distance=3
     )
 
-    info = backend.get_stabilizer_info(
-        len(backend.plaquettes)
-    )
+    info = backend.get_stabilizer_info(1)
 
     assert info.stabilizer_type == "Z"
-    assert info.plaquette_idx == 0
+    assert info.plaquette_idx == 1
 
 
 def test_get_stabilizer_info_invalid():
@@ -166,6 +164,27 @@ def test_stabilizer_metadata_mapping():
             "Z",
         }
 
+
+def test_checkerboard_stabilizer_types_d3():
+    backend = SurfaceCodeStimBackend(
+        distance=3
+    )
+
+    types = [
+        backend.get_stabilizer_info(i)
+        .stabilizer_type
+        for i in range(
+            backend.n_stabilizers
+        )
+    ]
+
+    assert types == [
+        "X",
+        "Z",
+        "Z",
+        "X",
+    ]
+    
 
 # =========================
 # Logical operator tests
