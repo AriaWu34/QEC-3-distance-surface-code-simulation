@@ -4,6 +4,7 @@ from qec.geometry import (
     manhattan,
     ANC_POS,
     code_sizes,
+    generate_stabilizer_layout,
     generate_plaquettes,
     generate_ancilla_positions,
     code_boundaries,
@@ -53,7 +54,6 @@ def test_code_sizes_d5():
     assert n_z == 16
 
 
-
 def test_code_boundaries_d3():
     bounds = code_boundaries(3)
 
@@ -83,6 +83,34 @@ def test_validate_distance_rejects_invalid():
 
     with pytest.raises(ValueError):
         validate_distance(0)    
+
+
+def test_generate_stabilizer_layout_d3():
+    layout = generate_stabilizer_layout(3)
+
+    assert len(layout) == 4
+
+
+def test_generate_stabilizer_layout_d5():
+    layout = generate_stabilizer_layout(5)
+
+    assert len(layout) == 16
+
+
+def test_checkerboard_layout_d3():
+    layout = generate_stabilizer_layout(3)
+
+    types = [
+        s.stabilizer_type
+        for s in layout
+    ]
+
+    assert types == [
+        "X",
+        "Z",
+        "Z",
+        "X",
+    ]
 
 
 def test_generate_plaquettes_d3():

@@ -2,8 +2,9 @@
 Geometry and indexing utilities for planar surface codes.
 """
 
-DEFAULT_DISTANCE = 3
+from dataclasses import dataclass
 
+DEFAULT_DISTANCE = 3
 
 def code_sizes(distance: int):
     """
@@ -46,6 +47,49 @@ def d_idx(r: int, c: int, distance: int) -> int:
     Convert a 2D data-qubit coordinate into a linear index.
     """
     return distance * r + c
+
+
+@dataclass(frozen=True)
+class StabilizerGeometry:
+    """
+    Metadata describing a checkerboard
+    stabilizer assignment.
+    """
+
+    stabilizer_idx: int
+    stabilizer_type: str
+    plaquette_idx: int
+
+
+def generate_stabilizer_layout(
+    distance: int,
+) -> list[StabilizerGeometry]:
+    """
+    Generate a checkerboard stabilizer layout.
+    """
+
+    stabilizers: list[StabilizerGeometry] = []
+
+    idx = 0
+
+    for r in range(distance - 1):
+        for c in range(distance - 1):
+
+            stabilizers.append(
+                StabilizerGeometry(
+                    stabilizer_idx=idx,
+                    stabilizer_type=(
+                        "X"
+                        if (r + c) % 2 == 0
+                        else "Z"
+                    ),
+                    plaquette_idx=idx,
+                )
+            )
+
+            idx += 1
+
+    return stabilizers
 
 
 def generate_plaquettes(distance: int):
