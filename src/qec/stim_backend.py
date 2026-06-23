@@ -250,15 +250,7 @@ class SurfaceCodeStimBackend:
         Add an X-stabilizer measurement.
         """
 
-        self.add_readout_error(
-            circuit,
-            ancilla,
-        )
-
-        circuit.append(
-            "M",
-            [ancilla],
-        )
+        circuit.append("H", [ancilla])
 
         for row, col in plaquette:
             circuit.append(
@@ -271,7 +263,15 @@ class SurfaceCodeStimBackend:
 
         circuit.append("H", [ancilla])
 
-        circuit.append("M", [ancilla])
+        self.add_readout_error(
+            circuit,
+            ancilla,
+        )
+
+        circuit.append(
+            "M",
+            [ancilla],
+        )
 
     def add_z_stabilizer(
         self,

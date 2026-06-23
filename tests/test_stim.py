@@ -251,9 +251,9 @@ def test_data_measurements_recorded():
     )
 
 
-# ========================
-# Depolarizing noise tests
-# ========================
+# =================
+# Noise model tests
+# =================
 
 def test_invalid_depolarizing_error():
     with pytest.raises(ValueError):
