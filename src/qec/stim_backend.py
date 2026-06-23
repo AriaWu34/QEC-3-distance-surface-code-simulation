@@ -46,6 +46,8 @@ class SurfaceCodeStimBackend:
         self,
         distance: int = 3,
         rounds: int = 1,
+        depolarizing_error: float = 0.0,
+        readout_error: float = 0.0,
     ):
         validate_distance(distance)
 
@@ -53,9 +55,20 @@ class SurfaceCodeStimBackend:
             raise ValueError(
                 "Rounds must be >= 1."
             )
+        
+        for p in (
+            depolarizing_error,
+            readout_error,
+        ):
+            if not 0.0 <= p <= 1.0:
+                raise ValueError(
+                    "Error probabilities must be in [0,1]."
+                )
 
         self.distance = distance
         self.rounds = rounds
+        self.depolarizing_error = depolarizing_error
+        self.readout_error = readout_error
 
         self.plaquettes = generate_plaquettes(distance)
 
@@ -237,7 +250,15 @@ class SurfaceCodeStimBackend:
         Add an X-stabilizer measurement.
         """
 
-        circuit.append("H", [ancilla])
+        self.add_readout_error(
+            circuit,
+            ancilla,
+        )
+
+        circuit.append(
+            "M",
+            [ancilla],
+        )
 
         for row, col in plaquette:
             circuit.append(
@@ -271,7 +292,15 @@ class SurfaceCodeStimBackend:
                 ],
             )
 
-        circuit.append("M", [ancilla])
+        self.add_readout_error(
+            circuit,
+            ancilla,
+        )
+
+        circuit.append(
+            "M",
+            [ancilla],
+        )
 
     def add_syndrome_round(
         self,
@@ -324,6 +353,11 @@ class SurfaceCodeStimBackend:
                 round_idx=round_idx,
                 stabilizer_idx=stabilizer_idx,
                 record_idx=record_idx,
+            )
+
+            self.add_depolarizing_noise(
+                circuit,
+                self.data_indices,
             )
 
             record_idx += 1
@@ -476,7 +510,14 @@ class SurfaceCodeStimBackend:
         circuit: stim.Circuit,
         record_idx: int,
     ) -> int:
-        
+
+        if self.readout_error > 0:
+            circuit.append(
+                "X_ERROR",
+                self.data_indices,
+                self.readout_error,
+            )
+
         circuit.append(
             "M",
             self.data_indices,
@@ -544,4 +585,37 @@ class SurfaceCodeStimBackend:
             "OBSERVABLE_INCLUDE",
             targets,
             1,
+        )
+
+    def add_depolarizing_noise(
+        self,
+        circuit: stim.Circuit,
+        qubits,
+    ) -> None:
+        if self.depolarizing_error == 0:
+            return
+
+        circuit.append(
+            "DEPOLARIZE1",
+            qubits,
+            self.depolarizing_error,
+        )
+
+    def add_readout_error(
+        self,
+        circuit: stim.Circuit,
+        qubit: int,
+    ) -> None:
+        """
+        Apply measurement error before
+        a measurement operation.
+        """
+
+        if self.readout_error == 0:
+            return
+
+        circuit.append(
+            "X_ERROR",
+            [qubit],
+            self.readout_error,
         )

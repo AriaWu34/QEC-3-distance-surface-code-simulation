@@ -249,3 +249,45 @@ def test_data_measurements_recorded():
         )
         == backend.n_data
     )
+
+
+# ========================
+# Depolarizing noise tests
+# ========================
+
+def test_invalid_depolarizing_error():
+    with pytest.raises(ValueError):
+        SurfaceCodeStimBackend(
+            distance=3,
+            depolarizing_error=-0.1,
+        )
+
+
+def test_depolarizing_error_present():
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        depolarizing_error=0.01,
+    )
+
+    circuit = backend.build_circuit()
+
+    assert "DEPOLARIZE1" in str(circuit)
+    
+
+def test_invalid_readout_error():
+    with pytest.raises(ValueError):
+        SurfaceCodeStimBackend(
+            distance=3,
+            readout_error=-0.1,
+        )
+
+
+def test_readout_error_present():
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        readout_error=0.01,
+    )
+
+    circuit = backend.build_circuit()
+
+    assert "X_ERROR" in str(circuit)
