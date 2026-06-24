@@ -402,3 +402,28 @@ def test_pymatching_decoder_builds():
     )
 
     assert decoder.matching is not None
+
+
+def test_pymatching_decode_runs():
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        rounds=5,
+        depolarizing_error=0.01,
+    )
+
+    decoder = MWPMDecoder(
+        backend="pymatching",
+        dem=backend.detector_error_model(),
+    )
+
+    dets = backend.sample_detectors(
+        shots=1
+    )
+
+    result = (
+        decoder.decode_detection_events(
+            dets[0]
+        )
+    )
+
+    assert len(result) == 2
