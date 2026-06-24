@@ -63,3 +63,45 @@ def plot_decoder_comparison(
     save_figure(save_path)
 
     plt.show()
+
+
+def plot_logical_failure_rate(
+    physical_error_rates,
+    logical_error_rates,
+    distance: int,
+    save_path: str | None = None,
+):
+    """
+    Plot logical failure rate versus
+    physical error rate.
+    """
+
+    plt.figure(figsize=(7.5, 5.2))
+
+    plt.plot(
+        physical_error_rates,
+        logical_error_rates,
+        "o-",
+        linewidth=2,
+        label=f"d={distance}",
+    )
+
+    plt.xlabel(
+        "Physical depolarizing probability"
+    )
+
+    plt.ylabel(
+        "Logical failure rate"
+    )
+
+    plt.title(
+        f"Logical Failure Rate (d={distance})"
+    )
+
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+    save_figure(save_path)
+
+    plt.show()
