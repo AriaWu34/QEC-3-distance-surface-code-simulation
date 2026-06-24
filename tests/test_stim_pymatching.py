@@ -86,6 +86,41 @@ def test_z_memory_has_one_observable():
     assert observable_count == 1
 
 
+def test_x_memory_has_one_observable():
+
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        memory_basis="X",
+    )
+
+    circuit = backend.build_circuit()
+
+    observable_count = str(circuit).count(
+        "OBSERVABLE_INCLUDE"
+    )
+
+    assert observable_count == 1
+
+
+def test_x_memory_sampling_shape():
+
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        memory_basis="X",
+    )
+
+    _, obs = (
+        backend.sample_detectors_and_observables(
+            shots=5
+        )
+    )
+
+    assert obs.shape == (
+        5,
+        1,
+    )
+
+
 # =========================
 # Detector tests
 # =========================

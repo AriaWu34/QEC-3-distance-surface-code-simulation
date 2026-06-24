@@ -443,6 +443,23 @@ class SurfaceCodeStimBackend:
                 ],
             )
 
+    def prepare_logical_state(
+        self,
+        circuit,
+    ):
+        """
+        Prepare the logical memory state.
+        """
+
+        if self.memory_basis == "Z":
+            return
+
+        if self.memory_basis == "X":
+            circuit.append(
+                "H",
+                self.data_indices,
+            )
+
     def build_circuit(self) -> stim.Circuit:
         """
         Build a Stim surface-code circuit.
@@ -456,6 +473,10 @@ class SurfaceCodeStimBackend:
         circuit.append(
             "R",
             range(self.n_qubits),
+        )
+
+        self.prepare_logical_state(
+            circuit
         )
 
         for round_idx in range(self.rounds):
@@ -486,8 +507,9 @@ class SurfaceCodeStimBackend:
 
         elif self.memory_basis == "X":
 
-            raise NotImplementedError(
-                "X-memory experiment not implemented."
+            self.add_logical_x_observable(
+                circuit,
+                record_idx - 1,
             )
 
         return circuit
@@ -520,7 +542,35 @@ class SurfaceCodeStimBackend:
             self.data_idx(0, c)
             for c in range(self.distance)
         ]
-    
+        
+    def measure_data_qubits(
+        self,
+        circuit,
+    ):
+        """
+        Measure data qubits in the
+        memory basis.
+        """
+
+        if self.memory_basis == "Z":
+
+            circuit.append(
+                "M",
+                self.data_indices,
+            )
+
+        elif self.memory_basis == "X":
+
+            circuit.append(
+                "H",
+                self.data_indices,
+            )
+
+            circuit.append(
+                "M",
+                self.data_indices,
+            )
+
     def add_final_data_measurements(
         self,
         circuit: stim.Circuit,
@@ -534,9 +584,8 @@ class SurfaceCodeStimBackend:
                 self.readout_error,
             )
 
-        circuit.append(
-            "M",
-            self.data_indices,
+        self.measure_data_qubits(
+            circuit
         )
 
         for q in self.data_indices:
@@ -600,7 +649,7 @@ class SurfaceCodeStimBackend:
         circuit.append(
             "OBSERVABLE_INCLUDE",
             targets,
-            1,
+            0,
         )
 
     def add_depolarizing_noise(
