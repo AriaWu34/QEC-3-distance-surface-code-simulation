@@ -59,6 +59,34 @@ def test_invalid_rounds():
 
 
 # =========================
+# Memory basis tests
+# =========================
+
+def test_invalid_memory_basis():
+
+    with pytest.raises(ValueError):
+        SurfaceCodeStimBackend(
+            memory_basis="bad"
+        )
+
+
+def test_z_memory_has_one_observable():
+
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        memory_basis="Z",
+    )
+
+    circuit = backend.build_circuit()
+
+    observable_count = str(circuit).count(
+        "OBSERVABLE_INCLUDE"
+    )
+
+    assert observable_count == 1
+
+
+# =========================
 # Detector tests
 # =========================
 
@@ -258,20 +286,6 @@ def test_logical_chains_use_valid_data_qubits():
 # Logical observable tests
 # ========================
 
-def test_observables_present():
-    backend = SurfaceCodeStimBackend(
-        distance=3
-    )
-
-    circuit = backend.build_circuit()
-
-    observable_count = str(circuit).count(
-        "OBSERVABLE_INCLUDE"
-    )
-
-    assert observable_count == 2
-
-
 def test_data_measurements_recorded():
     backend = SurfaceCodeStimBackend(
         distance=3
@@ -381,7 +395,7 @@ def test_detector_and_observable_sampling_shapes():
 
     assert obs.shape == (
         10,
-        2,
+        1,
     )
 
 
@@ -426,4 +440,4 @@ def test_pymatching_decode_runs():
         )
     )
 
-    assert len(result) == 2
+    assert len(result) == 1

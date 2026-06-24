@@ -49,6 +49,7 @@ class SurfaceCodeStimBackend:
         rounds: int = 1,
         depolarizing_error: float = 0.0,
         readout_error: float = 0.0,
+        memory_basis: str = "Z",
     ):
         validate_distance(distance)
 
@@ -56,6 +57,13 @@ class SurfaceCodeStimBackend:
             raise ValueError(
                 "Rounds must be >= 1."
             )
+        
+        if memory_basis not in {"X", "Z"}:
+            raise ValueError(
+                "memory_basis must be 'X' or 'Z'."
+            )
+
+        self.memory_basis = memory_basis
         
         for p in (
             depolarizing_error,
@@ -469,15 +477,18 @@ class SurfaceCodeStimBackend:
             record_idx,
         )
 
-        self.add_logical_z_observable(
-            circuit,
-            record_idx - 1,
-        )
+        if self.memory_basis == "Z":
 
-        self.add_logical_x_observable(
-            circuit,
-            record_idx - 1,
-        )
+            self.add_logical_z_observable(
+                circuit,
+                record_idx - 1,
+            )
+
+        elif self.memory_basis == "X":
+
+            raise NotImplementedError(
+                "X-memory experiment not implemented."
+            )
 
         return circuit
 
