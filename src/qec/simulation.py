@@ -125,6 +125,7 @@ def logical_failure_rate_stim(
     shots: int = 1000,
     depolarizing_error: float = 0.01,
     readout_error: float = 0.01,
+    memory_basis: str = "Z",
 ) -> float:
     """
     Estimate logical failure rate using
@@ -136,6 +137,7 @@ def logical_failure_rate_stim(
         rounds=rounds,
         depolarizing_error=depolarizing_error,
         readout_error=readout_error,
+        memory_basis=memory_basis,
     )
 
     decoder = MWPMDecoder(

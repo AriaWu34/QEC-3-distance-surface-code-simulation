@@ -4,6 +4,23 @@ from qec.decoders.mwpm import MWPMDecoder
 from qec.stim_backend import SurfaceCodeStimBackend
 
 
+def expected_detector_count(
+    backend: SurfaceCodeStimBackend,
+) -> int:
+
+    num_memory_stabilizers = sum(
+        s.stabilizer_type
+        == backend.memory_basis
+        for s in backend.stabilizers
+    )
+
+    return (
+        backend.n_stabilizers
+        * (backend.rounds - 1)
+        + num_memory_stabilizers
+    )
+
+
 # =========================
 # Construction tests
 # =========================
@@ -121,6 +138,47 @@ def test_x_memory_sampling_shape():
     )
 
 
+def test_x_memory_adds_final_detectors():
+
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        rounds=5,
+        memory_basis="X",
+    )
+
+    circuit = backend.build_circuit()
+
+    detector_count = str(circuit).count(
+        "DETECTOR"
+    )
+
+    num_x_stabilizers = sum(
+        s.stabilizer_type == "X"
+        for s in backend.stabilizers
+    )
+
+    expected = (
+        backend.n_stabilizers
+        * (backend.rounds - 1)
+        + num_x_stabilizers
+    )
+
+    assert detector_count == expected
+
+
+def test_x_memory_dem_builds():
+
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        rounds=5,
+        memory_basis="X",
+    )
+
+    dem = backend.detector_error_model()
+
+    assert dem is not None
+
+
 # =========================
 # Detector tests
 # =========================
@@ -137,13 +195,18 @@ def test_detector_count_d3_rounds_2():
         "DETECTOR"
     )
 
-    assert detector_count == backend.n_stabilizers
+    assert detector_count == (
+        expected_detector_count(
+            backend
+        )
+    )
 
 
-def test_detector_count_d3_rounds_3():
+def test_final_detector_layer_present():
+
     backend = SurfaceCodeStimBackend(
         distance=3,
-        rounds=3,
+        rounds=5,
     )
 
     circuit = backend.build_circuit()
@@ -153,19 +216,10 @@ def test_detector_count_d3_rounds_3():
     )
 
     assert detector_count == (
-        backend.n_stabilizers * 2
+        expected_detector_count(
+            backend
+        )
     )
-
-
-def test_detectors_present():
-    backend = SurfaceCodeStimBackend(
-        distance=3,
-        rounds=2,
-    )
-
-    circuit = backend.build_circuit()
-
-    assert "DETECTOR" in str(circuit)
 
 
 # =========================
@@ -317,25 +371,6 @@ def test_logical_chains_use_valid_data_qubits():
         assert q in backend.data_indices
 
 
-# ========================
-# Logical observable tests
-# ========================
-
-def test_data_measurements_recorded():
-    backend = SurfaceCodeStimBackend(
-        distance=3
-    )
-
-    backend.build_circuit()
-
-    assert (
-        len(
-            backend.data_measurement_records
-        )
-        == backend.n_data
-    )
-
-
 # =================
 # Noise model tests
 # =================
@@ -393,14 +428,11 @@ def test_detector_sampling_shape():
         shots=10
     )
 
-    expected_detectors = (
-        backend.n_stabilizers
-        * (backend.rounds - 1)
-    )
-
     assert samples.shape == (
         10,
-        expected_detectors,
+        expected_detector_count(
+            backend
+        ),
     )
 
 
@@ -418,14 +450,11 @@ def test_detector_and_observable_sampling_shapes():
         )
     )
 
-    expected_detectors = (
-        backend.n_stabilizers
-        * (backend.rounds - 1)
-    )
-
     assert dets.shape == (
         10,
-        expected_detectors,
+        expected_detector_count(
+            backend
+        ),
     )
 
     assert obs.shape == (

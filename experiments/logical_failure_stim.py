@@ -32,54 +32,67 @@ def main():
     )
 
     distances = [3, 5, 7]
-    results = {}
 
-    for distance in distances:
-
-        rates = []
+    for basis in ["Z", "X"]:
 
         print(
-            f"\nRunning d={distance}"
+            f"\n=== {basis} memory ==="
         )
 
-        for p in p_vals:
+        results = {}
 
-            rate = logical_failure_rate_stim(
-                distance=distance,
-                rounds=5,
-                shots=1000,
-                depolarizing_error=p,
-                readout_error=0.01,
-            )
+        basis_output_dir = (
+            OUTPUT_DIR / basis
+        )
 
-            rates.append(rate)
+        for distance in distances:
+
+            rates = []
 
             print(
-                f"d={distance} "
-                f"p={p:.4f} "
-                f"logical={rate:.4f}"
+                f"\nRunning d={distance}"
             )
 
-        results[distance] = rates
+            for p in p_vals:
 
-        plot_logical_failure_rate(
+                rate = logical_failure_rate_stim(
+                    distance=distance,
+                    rounds=5,
+                    shots=1000,
+                    depolarizing_error=p,
+                    readout_error=0.01,
+                    memory_basis=basis,
+                )
+
+                rates.append(rate)
+
+                print(
+                    f"{basis} "
+                    f"d={distance} "
+                    f"p={p:.4f} "
+                    f"logical={rate:.4f}"
+                )
+
+            results[distance] = rates
+
+            plot_logical_failure_rate(
+                physical_error_rates=p_vals,
+                logical_error_rates=rates,
+                distance=distance,
+                save_path=(
+                    basis_output_dir
+                    / f"logical_failure_rate_d{distance}.png"
+                ),
+            )
+
+        plot_distance_scaling(
             physical_error_rates=p_vals,
-            logical_error_rates=rates,
-            distance=distance,
+            logical_error_rates_by_distance=results,
             save_path=(
-                OUTPUT_DIR
-                / f"logical_failure_rate_d{distance}.png"
+                basis_output_dir
+                / "distance_scaling.png"
             ),
         )
-
-    plot_distance_scaling(
-        physical_error_rates=p_vals,
-        logical_error_rates_by_distance=results,
-        save_path=(
-            OUTPUT_DIR
-            / "distance_scaling.png"
-        ),
-    )
 
 
 if __name__ == "__main__":

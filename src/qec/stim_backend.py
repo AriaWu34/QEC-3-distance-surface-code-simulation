@@ -443,6 +443,95 @@ class SurfaceCodeStimBackend:
                 ],
             )
 
+    def add_final_detectors(
+        self,
+        circuit: stim.Circuit,
+        current_record_idx: int,
+    ) -> None:
+        """
+        Add the final detector layer for a logical
+        memory experiment.
+        """
+
+        last_round = self.rounds - 1
+
+        stabilizer_type = self.memory_basis
+
+        basis_coord = (
+            0.0
+            if stabilizer_type == "X"
+            else 1.0
+        )
+
+        for stabilizer_idx in range(
+            self.n_stabilizers
+        ):
+
+            info = self.get_stabilizer_info(
+                stabilizer_idx
+            )
+
+            if (
+                info.stabilizer_type
+                != stabilizer_type
+            ):
+                continue
+
+            plaquette = self.plaquettes[
+                info.plaquette_idx
+            ]
+
+            syndrome_record = self.get_measurement(
+                last_round,
+                stabilizer_idx,
+            )
+
+            targets = [
+                stim.target_rec(
+                    self.rec_offset(
+                        syndrome_record,
+                        current_record_idx,
+                    )
+                )
+            ]
+
+            for r, c in plaquette:
+
+                data_qubit = self.data_idx(
+                    r,
+                    c,
+                )
+
+                data_record = (
+                    self.data_measurement_records[
+                        data_qubit
+                    ]
+                )
+
+                targets.append(
+                    stim.target_rec(
+                        self.rec_offset_from_record(
+                            data_record,
+                            current_record_idx,
+                        )
+                    )
+                )
+
+            x, y = self.plaquette_center(
+                plaquette
+            )
+
+            circuit.append(
+                "DETECTOR",
+                targets,
+                [
+                    x,
+                    y,
+                    float(self.rounds),
+                    basis_coord,
+                ],
+            )
+
     def prepare_logical_state(
         self,
         circuit,
@@ -462,10 +551,12 @@ class SurfaceCodeStimBackend:
 
     def build_circuit(self) -> stim.Circuit:
         """
-        Build a Stim surface-code circuit.
+        Build a Stim surface-code circuit for a
+        logical memory experiment.
         """
 
         self.reset_measurements()
+
         record_idx = 0
 
         circuit = stim.Circuit()
@@ -479,7 +570,9 @@ class SurfaceCodeStimBackend:
             circuit
         )
 
-        for round_idx in range(self.rounds):
+        for round_idx in range(
+            self.rounds
+        ):
 
             record_idx = self.add_syndrome_round(
                 circuit,
@@ -492,10 +585,17 @@ class SurfaceCodeStimBackend:
                 round_idx,
                 record_idx - 1,
             )
-        
-        record_idx = self.add_final_data_measurements(
+
+        record_idx = (
+            self.add_final_data_measurements(
+                circuit,
+                record_idx,
+            )
+        )
+
+        self.add_final_detectors(
             circuit,
-            record_idx,
+            record_idx - 1,
         )
 
         if self.memory_basis == "Z":
