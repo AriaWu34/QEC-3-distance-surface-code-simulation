@@ -105,3 +105,46 @@ def plot_logical_failure_rate(
     save_figure(save_path)
 
     plt.show()
+
+
+def plot_distance_scaling(
+    physical_error_rates,
+    logical_error_rates_by_distance,
+    save_path: str | None = None,
+):
+    """
+    Compare logical failure rates
+    across code distances.
+    """
+
+    plt.figure(figsize=(7.5, 5.2))
+
+    for distance, rates in (
+        logical_error_rates_by_distance.items()
+    ):
+        plt.plot(
+            physical_error_rates,
+            rates,
+            "o-",
+            label=f"d={distance}",
+        )
+
+    plt.xlabel(
+        "Physical depolarizing probability"
+    )
+
+    plt.ylabel(
+        "Logical failure rate"
+    )
+
+    plt.title(
+        "Distance Scaling"
+    )
+
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+
+    save_figure(save_path)
+
+    plt.show()
