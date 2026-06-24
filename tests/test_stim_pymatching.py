@@ -355,6 +355,36 @@ def test_detector_sampling_shape():
     )
 
 
+def test_detector_and_observable_sampling_shapes():
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        rounds=5,
+        depolarizing_error=0.01,
+    )
+
+    dets, obs = (
+        backend
+        .sample_detectors_and_observables(
+            shots=10
+        )
+    )
+
+    expected_detectors = (
+        backend.n_stabilizers
+        * (backend.rounds - 1)
+    )
+
+    assert dets.shape == (
+        10,
+        expected_detectors,
+    )
+
+    assert obs.shape == (
+        10,
+        2,
+    )
+
+
 # =================
 # PyMatching tests
 # =================

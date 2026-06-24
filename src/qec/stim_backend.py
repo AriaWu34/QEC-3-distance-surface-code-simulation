@@ -651,3 +651,22 @@ class SurfaceCodeStimBackend:
         )
 
         return sampler.sample(shots)
+    
+    def sample_detectors_and_observables(
+        self,
+        shots: int,
+    ):
+        """
+        Sample detector outcomes and
+        logical observables.
+        """
+
+        sampler = (
+            self.build_circuit()
+            .compile_detector_sampler()
+        )
+
+        return sampler.sample(
+            shots,
+            separate_observables=True,
+        )
