@@ -15,6 +15,10 @@ from qec.noise import depol_noise_model
 from qec.decoders.mwpm import (
     decode_one_shot,
     decode_spacetime_one_shot,
+    MWPMDecoder,
+)
+from qec.stim_backend import (
+    SurfaceCodeStimBackend,
 )
 
 def logical_failure_rates_single(
@@ -113,3 +117,53 @@ def compare_single_vs_spacetime(
     return (np.array(p_vals),
             np.array(pLX_1), np.array(pLZ_1),
             np.array(pLX_ST), np.array(pLZ_ST))
+
+
+def logical_failure_rate_stim(
+    distance: int = 3,
+    rounds: int = 5,
+    shots: int = 1000,
+    depolarizing_error: float = 0.01,
+    readout_error: float = 0.01,
+) -> float:
+    """
+    Estimate logical failure rate using
+    Stim detector sampling and PyMatching.
+    """
+
+    backend = SurfaceCodeStimBackend(
+        distance=distance,
+        rounds=rounds,
+        depolarizing_error=depolarizing_error,
+        readout_error=readout_error,
+    )
+
+    decoder = MWPMDecoder(
+        backend="pymatching",
+        dem=backend.detector_error_model(),
+    )
+
+    dets, obs = (
+        backend
+        .sample_detectors_and_observables(
+            shots=shots,
+        )
+    )
+
+    failures = 0
+
+    for det, actual in zip(
+        dets,
+        obs,
+    ):
+        predicted = (
+            decoder
+            .decode_detection_events(det)
+        )
+
+        if not (
+            predicted == actual
+        ).all():
+            failures += 1
+
+    return failures / shots
