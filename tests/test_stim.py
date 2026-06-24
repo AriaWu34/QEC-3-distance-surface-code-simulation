@@ -326,3 +326,29 @@ def test_readout_error_present():
     circuit = backend.build_circuit()
 
     assert "X_ERROR" in str(circuit)
+
+
+# =====================
+# Sampling tests
+# =====================
+
+def test_detector_sampling_shape():
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        rounds=5,
+        depolarizing_error=0.01,
+    )
+
+    samples = backend.sample_detectors(
+        shots=10
+    )
+
+    expected_detectors = (
+        backend.n_stabilizers
+        * (backend.rounds - 1)
+    )
+
+    assert samples.shape == (
+        10,
+        expected_detectors,
+    )

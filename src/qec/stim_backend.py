@@ -624,3 +624,30 @@ class SurfaceCodeStimBackend:
             [qubit],
             self.readout_error,
         )
+
+
+    def compile_detector_sampler(
+        self,
+    ) -> stim.CompiledDetectorSampler:
+        """
+        Compile a detector sampler for the circuit.
+        """
+
+        return (
+            self.build_circuit()
+            .compile_detector_sampler()
+        )
+
+    def sample_detectors(
+        self,
+        shots: int,
+    ):
+        """
+        Sample detector outcomes.
+        """
+
+        sampler = (
+            self.compile_detector_sampler()
+        )
+
+        return sampler.sample(shots)
