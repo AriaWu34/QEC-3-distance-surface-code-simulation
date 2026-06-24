@@ -1,5 +1,6 @@
 import pytest
 
+from qec.decoders.mwpm import MWPMDecoder
 from qec.stim_backend import SurfaceCodeStimBackend
 
 
@@ -352,3 +353,22 @@ def test_detector_sampling_shape():
         10,
         expected_detectors,
     )
+
+
+# =================
+# PyMatching tests
+# =================
+
+def test_pymatching_decoder_builds():
+    backend = SurfaceCodeStimBackend(
+        distance=3,
+        rounds=5,
+        depolarizing_error=0.01,
+    )
+
+    decoder = MWPMDecoder(
+        backend="pymatching",
+        dem=backend.detector_error_model(),
+    )
+
+    assert decoder.matching is not None

@@ -1,15 +1,19 @@
 """
-MWPM decoder implementation for surface-code simulations.
+MWPM decoder implementations for surface-code simulations.
 
 This module provides Minimum Weight Perfect Matching (MWPM)
 decoding utilities for both single-round and space-time
 syndrome decoding.
 
-Future decoder backends (e.g. PyMatching and Union-Find)
-will implement the same decoder interface defined in
-qec.decoders.base.
+The decoder supports multiple backends:
+- NetworkX-based MWPM for reference decoding
+- PyMatching-based MWPM for Stim detector error models
+
+All decoder implementations conform to the common
+decoder interface defined in qec.decoders.base.
 """
 
+import pymatching
 import networkx as nx
 from qec.geometry import (
     manhattan,
@@ -24,9 +28,39 @@ class MWPMDecoder(Decoder):
     """
     Reference MWPM decoder implementation.
 
-    Wraps the existing decoding pipeline behind the common
-    Decoder interface.
+    Supports both NetworkX and PyMatching backends.
     """
+
+    def __init__(
+        self,
+        backend: str = "networkx",
+        dem=None,
+    ):
+        self.backend = backend
+
+        self.matching = None
+
+        if backend == "pymatching":
+
+            if dem is None:
+                raise ValueError(
+                    "DEM required for "
+                    "PyMatching backend."
+                )
+
+            self.matching = (
+                pymatching.Matching
+                .from_detector_error_model(
+                    dem
+                )
+            )
+
+        elif backend != "networkx":
+            raise ValueError(
+                f"Unknown backend: "
+                f"{backend}"
+            )
+
 
     def decode(
         self,
@@ -50,6 +84,24 @@ class MWPMDecoder(Decoder):
             bitstr=bitstr,
             distance=distance,
             k=k,
+        )
+    
+    def decode_detection_events(
+        self,
+        detection_events,
+    ):
+        """
+        Decode detector events using
+        the PyMatching backend.
+        """
+
+        if self.backend != "pymatching":
+            raise ValueError(
+                "PyMatching backend required."
+            )
+
+        return self.matching.decode(
+            detection_events
         )
     
 
