@@ -16,6 +16,4 @@ __pycache__/
 Thumbs.db
 
 # Legacy notebooks
-notebooks/3-distance-surface-code.ipynb
-notebooks/repetition-code-simulaiton.ipynb
-notebooks/logical_failure_investigation.ipynb
+notebooks/legacy/
