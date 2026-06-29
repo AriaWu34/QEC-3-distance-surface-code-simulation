@@ -52,38 +52,82 @@ def d_idx(r: int, c: int, distance: int) -> int:
 @dataclass(frozen=True)
 class StabilizerGeometry:
     """
-    Metadata describing a checkerboard
-    stabilizer assignment.
+    Geometry describing a stabilizer in the
+    checkerboard surface-code layout.
     """
 
     stabilizer_idx: int
+
     stabilizer_type: str
+
     plaquette_idx: int
+
+    ancilla_position: tuple[float, float]
+
+    data_coordinates: tuple[
+        tuple[int, int],
+        ...
+    ]
+
+    data_qubits: tuple[int, ...]
+
+    boundary: bool = False
 
 
 def generate_stabilizer_layout(
     distance: int,
 ) -> list[StabilizerGeometry]:
     """
-    Generate a checkerboard stabilizer layout.
+    Generate the checkerboard stabilizer
+    layout for a planar surface code.
     """
 
-    stabilizers: list[StabilizerGeometry] = []
+    stabilizers: list[
+        StabilizerGeometry
+    ] = []
 
     idx = 0
 
     for r in range(distance - 1):
+
         for c in range(distance - 1):
+
+            coordinates = (
+                (r, c),
+                (r, c + 1),
+                (r + 1, c),
+                (r + 1, c + 1),
+            )
 
             stabilizers.append(
                 StabilizerGeometry(
                     stabilizer_idx=idx,
+
                     stabilizer_type=(
                         "X"
                         if (r + c) % 2 == 0
                         else "Z"
                     ),
+
                     plaquette_idx=idx,
+
+                    ancilla_position=(
+                        r + 0.5,
+                        c + 0.5,
+                    ),
+
+                    data_coordinates=coordinates,
+
+                    data_qubits=tuple(
+                        d_idx(
+                            rr,
+                            cc,
+                            distance,
+                        )
+                        for rr, cc in coordinates
+                    ),
+
+                    boundary=False,
                 )
             )
 

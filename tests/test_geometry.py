@@ -12,6 +12,10 @@ from qec.geometry import (
 )
 
 
+# =========================
+# CGeometry indexing
+# =========================
+
 def test_d_idx_distance_3():
     assert d_idx(0, 0, 3) == 0
     assert d_idx(0, 2, 3) == 2
@@ -37,6 +41,10 @@ def test_ancilla_positions():
     assert ANC_POS[0] == (0.5, 0.5)
     assert ANC_POS[3] == (1.5, 1.5)
 
+
+# =========================
+# Code parameters
+# =========================
 
 def test_code_sizes_d3():
     n_data, n_x, n_z = code_sizes(3)
@@ -85,17 +93,9 @@ def test_validate_distance_rejects_invalid():
         validate_distance(0)    
 
 
-def test_generate_stabilizer_layout_d3():
-    layout = generate_stabilizer_layout(3)
-
-    assert len(layout) == 4
-
-
-def test_generate_stabilizer_layout_d5():
-    layout = generate_stabilizer_layout(5)
-
-    assert len(layout) == 16
-
+# =========================
+# Stabilizer geometry
+# =========================
 
 def test_checkerboard_layout_d3():
     layout = generate_stabilizer_layout(3)
@@ -112,6 +112,76 @@ def test_checkerboard_layout_d3():
         "X",
     ]
 
+
+def test_stabilizer_has_data_qubits():
+
+    layout = generate_stabilizer_layout(3)
+
+    assert layout[0].data_qubits == (
+        0,
+        1,
+        3,
+        4,
+    )
+
+
+def test_stabilizer_has_data_coordinates():
+
+    layout = generate_stabilizer_layout(3)
+
+    assert (
+        layout[0].data_coordinates
+        ==
+        (
+            (0, 0),
+            (0, 1),
+            (1, 0),
+            (1, 1),
+        )
+    )
+
+
+def test_stabilizer_has_ancilla_position():
+
+    layout = generate_stabilizer_layout(3)
+
+    assert (
+        layout[0].ancilla_position
+        ==
+        (0.5, 0.5)
+    )
+
+
+def test_stabilizer_not_boundary():
+
+    layout = generate_stabilizer_layout(3)
+
+    assert layout[0].boundary is False
+
+
+def test_stabilizer_geometry_consistency():
+
+    layout = generate_stabilizer_layout(5)
+
+    for stabilizer in layout:
+
+        assert len(stabilizer.data_qubits) == 4
+        assert len(stabilizer.data_coordinates) == 4
+
+        assert (
+            len(set(stabilizer.data_qubits))
+            == 4
+        )
+
+        assert (
+            len(set(stabilizer.data_coordinates))
+            == 4
+        )
+
+
+# =========================
+# Legacy compatibility
+# =========================
 
 def test_generate_plaquettes_d3():
     assert len(generate_plaquettes(3)) == 4
