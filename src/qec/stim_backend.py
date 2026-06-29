@@ -243,24 +243,15 @@ class SurfaceCodeStimBackend:
             - current_record_idx
             - 1
         )
-    
-    def plaquette_center(
-        self,
-        plaquette,
-    ):
-        rows = [r for r, _ in plaquette]
-        cols = [c for _, c in plaquette]
-
-        return (
-            sum(rows) / len(rows),
-            sum(cols) / len(cols),
-        )
 
     def add_x_stabilizer(
         self,
         circuit: stim.Circuit,
         ancilla: int,
-        plaquette,
+        coordinates: tuple[
+            tuple[int, int],
+            ...
+        ],
     ) -> None:
         """
         Add an X-stabilizer measurement.
@@ -268,7 +259,7 @@ class SurfaceCodeStimBackend:
 
         circuit.append("H", [ancilla])
 
-        for row, col in plaquette:
+        for row, col in coordinates:
             circuit.append(
                 "CX",
                 [
@@ -293,13 +284,16 @@ class SurfaceCodeStimBackend:
         self,
         circuit: stim.Circuit,
         ancilla: int,
-        plaquette,
+        coordinates: tuple[
+            tuple[int, int],
+            ...
+        ],
     ) -> None:
         """
         Add a Z-stabilizer measurement.
         """
 
-        for row, col in plaquette:
+        for row, col in coordinates:
             circuit.append(
                 "CX",
                 [
@@ -340,16 +334,16 @@ class SurfaceCodeStimBackend:
                 + stabilizer.stabilizer_idx
             )
 
-            plaquette = self.plaquettes[
-                stabilizer.plaquette_idx
-            ]
+            coordinates = (
+                stabilizer.data_coordinates
+            )
 
             if stabilizer.stabilizer_type == "X":
 
                 self.add_x_stabilizer(
                     circuit,
                     ancilla,
-                    plaquette,
+                    coordinates,
                 )
 
             else:
@@ -357,7 +351,7 @@ class SurfaceCodeStimBackend:
                 self.add_z_stabilizer(
                     circuit,
                     ancilla,
-                    plaquette,
+                    coordinates,
                 )
 
             self.record_measurement(
@@ -401,21 +395,17 @@ class SurfaceCodeStimBackend:
                 stabilizer_idx,
             )
 
-            info = self.get_stabilizer_info(
+            stabilizer = self.stabilizers[
                 stabilizer_idx
-            )
-
-            plaquette = self.plaquettes[
-                info.plaquette_idx
             ]
 
-            x, y = self.plaquette_center(
-                plaquette
+            x, y = (
+                stabilizer.ancilla_position
             )
 
             basis = (
                 0.0
-                if info.stabilizer_type == "X"
+                if stabilizer.stabilizer_type == "X"
                 else 1.0
             )
 
@@ -467,19 +457,19 @@ class SurfaceCodeStimBackend:
             self.n_stabilizers
         ):
 
-            info = self.get_stabilizer_info(
+            stabilizer = self.stabilizers[
                 stabilizer_idx
-            )
+            ]
 
             if (
-                info.stabilizer_type
+                stabilizer.stabilizer_type
                 != stabilizer_type
             ):
                 continue
 
-            plaquette = self.plaquettes[
-                info.plaquette_idx
-            ]
+            coordinates = (
+                stabilizer.data_coordinates
+            )
 
             syndrome_record = self.get_measurement(
                 last_round,
@@ -495,7 +485,7 @@ class SurfaceCodeStimBackend:
                 )
             ]
 
-            for r, c in plaquette:
+            for r, c in coordinates:
 
                 data_qubit = self.data_idx(
                     r,
@@ -517,8 +507,8 @@ class SurfaceCodeStimBackend:
                     )
                 )
 
-            x, y = self.plaquette_center(
-                plaquette
+            x, y = (
+                stabilizer.ancilla_position
             )
 
             circuit.append(
