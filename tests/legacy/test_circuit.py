@@ -1,4 +1,4 @@
-from qec.circuit import (
+from qec.legacy.circuit import (
     one_round_surface_code,
     k_rounds_surface_code,
 )
