@@ -1,4 +1,4 @@
-from qec.decoders.mwpm import (
+from qec.decoders.networkx import (
     mwpm_pairs,
     correction_spans_code,
 )
