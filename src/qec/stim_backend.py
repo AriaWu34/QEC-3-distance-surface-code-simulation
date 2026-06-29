@@ -13,7 +13,6 @@ from qec.geometry import (
     d_idx,
     code_sizes,
     generate_stabilizer_layout,
-    generate_plaquettes,
     validate_distance,
 )
 
@@ -27,16 +26,6 @@ class StabilizerMeasurement:
     round_idx: int
     stabilizer_idx: int
     record_idx: int
-
-@dataclass(frozen=True)
-class StabilizerInfo:
-    """
-    Metadata describing a stabilizer.
-    """
-
-    stabilizer_idx: int
-    stabilizer_type: str
-    plaquette_idx: int
 
 class SurfaceCodeStimBackend:
     """
@@ -81,8 +70,6 @@ class SurfaceCodeStimBackend:
 
         self.stabilizers = generate_stabilizer_layout(distance)
 
-        self.plaquettes = generate_plaquettes(distance)
-
         self.n_data, self.n_x, self.n_z = code_sizes(distance)
 
         self.measurements: dict[
@@ -126,37 +113,6 @@ class SurfaceCodeStimBackend:
     def stabilizer_ancilla_start(self) -> int:
         return self.n_data
     
-
-    def get_stabilizer_info(
-        self,
-        stabilizer_idx: int,
-    ) -> StabilizerInfo:
-        """
-        Return metadata for a stabilizer in the
-        checkerboard layout.
-
-        Provides the stabilizer type (X or Z)
-        and the associated plaquette index.
-        """
-
-        if not (
-            0 <= stabilizer_idx
-            < len(self.stabilizers)
-        ):
-            raise ValueError(
-                f"Invalid stabilizer index: "
-                f"{stabilizer_idx}"
-            )
-
-        stabilizer = self.stabilizers[
-            stabilizer_idx
-        ]
-
-        return StabilizerInfo(
-            stabilizer_idx=stabilizer.stabilizer_idx,
-            stabilizer_type=stabilizer.stabilizer_type,
-            plaquette_idx=stabilizer.plaquette_idx,
-        )
 
     def reset_measurements(self) -> None:
         """

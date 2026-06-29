@@ -223,77 +223,89 @@ def test_final_detector_layer_present():
 
 
 # =========================
-# Stabilizer metadata tests
+# Stabilizer geometry tests
 # =========================
 
-def test_get_stabilizer_info_x():
+def test_first_stabilizer_geometry():
+
     backend = SurfaceCodeStimBackend(
         distance=3
     )
 
-    info = backend.get_stabilizer_info(0)
+    stabilizer = backend.stabilizers[0]
 
-    assert info.stabilizer_type == "X"
-    assert info.plaquette_idx == 0
+    assert stabilizer.stabilizer_type == "X"
+
+    assert stabilizer.ancilla_position == (
+        0.5,
+        0.5,
+    )
+
+    assert stabilizer.data_coordinates == (
+        (0, 0),
+        (0, 1),
+        (1, 0),
+        (1, 1),
+    )
+
+    assert stabilizer.data_qubits == (
+        0,
+        1,
+        3,
+        4,
+    )
+
+    assert stabilizer.boundary is False
 
 
-def test_get_stabilizer_info_z():
+def test_second_stabilizer_geometry():
+
     backend = SurfaceCodeStimBackend(
         distance=3
     )
 
-    info = backend.get_stabilizer_info(1)
+    stabilizer = backend.stabilizers[1]
 
-    assert info.stabilizer_type == "Z"
-    assert info.plaquette_idx == 1
+    assert stabilizer.stabilizer_type == "Z"
 
-
-def test_get_stabilizer_info_invalid():
-    backend = SurfaceCodeStimBackend(
-        distance=3
+    assert stabilizer.ancilla_position == (
+        0.5,
+        1.5,
     )
 
-    with pytest.raises(ValueError):
-        backend.get_stabilizer_info(
-            backend.n_stabilizers
-        )
 
+def test_stabilizer_geometry_mapping():
 
-def test_stabilizer_metadata_mapping():
     backend = SurfaceCodeStimBackend(
-        distance=3
+        distance=5
     )
 
-    for idx in range(
-        backend.n_stabilizers
-    ):
-        info = backend.get_stabilizer_info(
-            idx
-        )
+    for stabilizer in backend.stabilizers:
 
-        assert (
-            0
-            <= info.plaquette_idx
-            < len(backend.plaquettes)
-        )
+        assert len(
+            stabilizer.data_qubits
+        ) == 4
 
-        assert info.stabilizer_type in {
+        assert len(
+            stabilizer.data_coordinates
+        ) == 4
+
+        assert stabilizer.stabilizer_type in {
             "X",
             "Z",
         }
 
 
 def test_checkerboard_stabilizer_types_d3():
+
     backend = SurfaceCodeStimBackend(
         distance=3
     )
 
     types = [
-        backend.get_stabilizer_info(i)
-        .stabilizer_type
-        for i in range(
-            backend.n_stabilizers
-        )
+        stabilizer.stabilizer_type
+        for stabilizer
+        in backend.stabilizers
     ]
 
     assert types == [
@@ -304,20 +316,39 @@ def test_checkerboard_stabilizer_types_d3():
     ]
 
 
-def test_d3_stabilizer_count():
-    backend = SurfaceCodeStimBackend(
-        distance=3
-    )
+def test_stabilizer_positions_are_unique():
 
-    assert backend.n_stabilizers == 4
-
-
-def test_d5_stabilizer_count():
     backend = SurfaceCodeStimBackend(
         distance=5
     )
 
-    assert backend.n_stabilizers == 16
+    positions = {
+        stabilizer.ancilla_position
+        for stabilizer in backend.stabilizers
+    }
+
+    assert len(positions) == (
+        backend.n_stabilizers
+    )
+
+
+def test_stabilizer_indices_are_sequential():
+
+    backend = SurfaceCodeStimBackend(
+        distance=5
+    )
+
+    indices = [
+        stabilizer.stabilizer_idx
+        for stabilizer
+        in backend.stabilizers
+    ]
+
+    assert indices == list(
+        range(
+            backend.n_stabilizers
+        )
+    )
 
 
 # =========================

@@ -60,8 +60,6 @@ class StabilizerGeometry:
 
     stabilizer_type: str
 
-    plaquette_idx: int
-
     ancilla_position: tuple[float, float]
 
     data_coordinates: tuple[
@@ -109,8 +107,6 @@ def generate_stabilizer_layout(
                         else "Z"
                     ),
 
-                    plaquette_idx=idx,
-
                     ancilla_position=(
                         r + 0.5,
                         c + 0.5,
@@ -154,30 +150,6 @@ def generate_plaquettes(distance: int):
             )
 
     return plaqs
-
-
-# Backward compatibility for d=3
-PLAQS = generate_plaquettes(DEFAULT_DISTANCE)
-
-
-def generate_ancilla_positions(distance: int):
-    """
-    Generate ancilla coordinates for all plaquettes.
-    """
-    pos = {}
-
-    idx = 0
-
-    for r in range(distance - 1):
-        for c in range(distance - 1):
-            pos[idx] = (r + 0.5, c + 0.5)
-            idx += 1
-
-    return pos
-
-
-# Backward compatibility for d=3
-ANC_POS = generate_ancilla_positions(DEFAULT_DISTANCE)
 
 
 # Logical boundaries used by the decoder

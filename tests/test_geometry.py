@@ -2,11 +2,8 @@ import pytest
 from qec.geometry import (
     d_idx,
     manhattan,
-    ANC_POS,
     code_sizes,
     generate_stabilizer_layout,
-    generate_plaquettes,
-    generate_ancilla_positions,
     code_boundaries,
     validate_distance,
 )
@@ -34,12 +31,6 @@ def test_manhattan_distance():
     assert manhattan((0, 0), (0, 0)) == 0
     assert manhattan((0, 0), (1, 1)) == 2
     assert manhattan((0.5, 0.5), (1.5, 1.5)) == 2.0
-
-
-def test_ancilla_positions():
-    assert len(ANC_POS) == 4
-    assert ANC_POS[0] == (0.5, 0.5)
-    assert ANC_POS[3] == (1.5, 1.5)
 
 
 # =========================
@@ -177,23 +168,3 @@ def test_stabilizer_geometry_consistency():
             len(set(stabilizer.data_coordinates))
             == 4
         )
-
-
-# =========================
-# Legacy compatibility
-# =========================
-
-def test_generate_plaquettes_d3():
-    assert len(generate_plaquettes(3)) == 4
-
-
-def test_generate_plaquettes_d5():
-    assert len(generate_plaquettes(5)) == 16
-
-
-def test_generate_ancilla_positions_d3():
-    assert len(generate_ancilla_positions(3)) == 4
-
-
-def test_generate_ancilla_positions_d5():
-    assert len(generate_ancilla_positions(5)) == 16
