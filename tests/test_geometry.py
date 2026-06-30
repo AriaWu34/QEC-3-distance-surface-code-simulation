@@ -10,7 +10,7 @@ from qec.geometry import (
 
 
 # =========================
-# CGeometry indexing
+# Geometry indexing
 # =========================
 
 def test_d_idx_distance_3():
@@ -82,6 +82,39 @@ def test_validate_distance_rejects_invalid():
 
     with pytest.raises(ValueError):
         validate_distance(0)    
+
+
+def test_stabilizer_weight():
+
+    layout = generate_stabilizer_layout(5)
+
+    for stabilizer in layout:
+
+        assert stabilizer.weight == len(
+            stabilizer.data_qubits
+        )
+
+
+def test_checkerboard_stabilizer_weight():
+
+    layout = generate_stabilizer_layout(5)
+
+    assert all(
+        stabilizer.weight == 4
+        for stabilizer in layout
+    )
+
+
+def test_weight_matches_coordinates():
+
+    layout = generate_stabilizer_layout(7)
+
+    for stabilizer in layout:
+
+        assert (
+            stabilizer.weight
+            == len(stabilizer.data_coordinates)
+        )
 
 
 # =========================

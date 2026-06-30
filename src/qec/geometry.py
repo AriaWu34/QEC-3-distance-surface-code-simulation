@@ -71,6 +71,13 @@ class StabilizerGeometry:
 
     boundary: bool = False
 
+    @property
+    def weight(self):
+        """
+        Number of data qubits acted on by the stabilizer.
+        """
+        return len(self.data_qubits)
+
 
 def generate_stabilizer_layout(
     distance: int,
@@ -134,7 +141,15 @@ def generate_stabilizer_layout(
 
 def generate_plaquettes(distance: int):
     """
-    Generate all 2x2 plaquettes for a distance-d planar code.
+    Generate all 2×2 plaquettes for the legacy
+    Qiskit surface-code implementation.
+
+    Notes
+    -----
+    This helper is retained for compatibility with
+    the legacy circuit construction pipeline. The
+    Stim backend uses `generate_stabilizer_layout()`
+    instead.
     """
     plaqs = []
 
@@ -150,13 +165,6 @@ def generate_plaquettes(distance: int):
             )
 
     return plaqs
-
-
-# Logical boundaries used by the decoder
-# (still fixed to d=3 for now; will be generalized later)
-TOP_Y, BOT_Y = -0.5, 2.5
-LEFT_X, RIGHT_X = -0.5, 2.5
-GRID_SPAN = 3.0
 
 
 def manhattan(p: tuple, q: tuple) -> float:
