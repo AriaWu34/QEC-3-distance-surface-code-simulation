@@ -49,6 +49,53 @@ def d_idx(r: int, c: int, distance: int) -> int:
     return distance * r + c
 
 
+def valid_data_coordinate(
+    row: int,
+    col: int,
+    distance: int,
+) -> bool:
+    """
+    Return whether a data-qubit coordinate
+    lies inside the code.
+    """
+
+    return (
+        0 <= row < distance
+        and 0 <= col < distance
+    )
+
+
+def neighbouring_data_coordinates(
+    row: int,
+    col: int,
+    distance: int,
+) -> tuple[tuple[int, int], ...]:
+    """
+    Return all data qubits neighbouring an
+    ancilla centred at (row+0.5, col+0.5).
+    """
+
+    neighbours = []
+
+    candidates = [
+        (row, col),
+        (row, col + 1),
+        (row + 1, col),
+        (row + 1, col + 1),
+    ]
+
+    for r, c in candidates:
+
+        if valid_data_coordinate(
+            r,
+            c,
+            distance,
+        ):
+            neighbours.append((r, c))
+
+    return tuple(neighbours)
+
+
 @dataclass(frozen=True)
 class StabilizerGeometry:
     """
@@ -97,11 +144,10 @@ def generate_stabilizer_layout(
 
         for c in range(distance - 1):
 
-            coordinates = (
-                (r, c),
-                (r, c + 1),
-                (r + 1, c),
-                (r + 1, c + 1),
+            coordinates = neighbouring_data_coordinates(
+                r,
+                c,
+                distance,
             )
 
             stabilizers.append(

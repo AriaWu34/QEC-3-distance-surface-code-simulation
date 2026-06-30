@@ -4,6 +4,7 @@ from qec.geometry import (
     manhattan,
     code_sizes,
     generate_stabilizer_layout,
+    neighbouring_data_coordinates,
     code_boundaries,
     validate_distance,
 )
@@ -201,3 +202,31 @@ def test_stabilizer_geometry_consistency():
             len(set(stabilizer.data_coordinates))
             == 4
         )
+
+
+def test_neighbouring_data_coordinates_d3():
+
+    coords = neighbouring_data_coordinates(
+        0,
+        0,
+        3,
+    )
+
+    assert coords == (
+        (0, 0),
+        (0, 1),
+        (1, 0),
+        (1, 1),
+    )
+
+
+def test_all_neighbours_are_valid():
+
+    layout = generate_stabilizer_layout(7)
+
+    for stabilizer in layout:
+
+        for r, c in stabilizer.data_coordinates:
+
+            assert 0 <= r < 7
+            assert 0 <= c < 7
