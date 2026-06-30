@@ -17,7 +17,7 @@ The simulator is designed as a modular research platform that can be extended wi
 - X- and Z-memory experiments
 - Logical failure-rate simulations
 - Distance-scaling experiments
-- Modular package structure with unit tests
+- Modular architecture with comprehensive unit tests
 
 ---
 
@@ -26,15 +26,18 @@ The simulator is designed as a modular research platform that can be extended wi
 ```text
 src/qec/
 ├── geometry.py
-├── circuit.py
-├── syndrome.py
-├── noise.py
+├── stim_backend.py
 ├── simulation.py
 ├── visualization.py
-├── stim_backend.py
-└── decoders/
-    ├── base.py
-    └── mwpm.py
+├── decoders/
+│   ├── base.py
+│   ├── mwpm.py
+│   └── networkx.py
+└── legacy/
+    ├── circuit.py
+    ├── noise.py
+    ├── simulation.py
+    └── syndrome.py
 
 experiments/
 ├── compare_decoders.py
@@ -48,49 +51,45 @@ results/
 
 tests/
 ├── test_geometry.py
-├── test_circuit.py
-├── test_syndrome.py
-├── test_decoder.py
+├── test_stim_backend.py
 ├── test_simulation.py
-└── test_stim_pymatching.py
+├── decoders/
+│   ├── test_mwpm.py
+│   └── test_networkx.py
+└── legacy/
+    ├── test_circuit.py
+    ├── test_simulation.py
+    └── test_syndrome.py
 
 notebooks/
-├── demo.ipynb
-├── repetition-code-simulation.ipynb
-└── 3-distance-surface-code.ipynb
+└── demo.ipynb
 ```
+
+### Legacy Implementation
+
+The `legacy/` package contains the original **Qiskit**-based implementation of the simulator, including circuit construction, syndrome extraction, noise modelling, simulation, and the reference NetworkX decoder. It is retained for comparison, regression testing, and historical reference.
+
+Active development is focused on the **Stim**-based simulation pipeline, which provides detector error model (DEM) generation, PyMatching decoding, and serves as the foundation for future planar surface-code geometry and threshold studies.
 
 ---
 
 ## Example Experiment
 
-### Decoder Comparison
-
-```bash
-python experiments/compare_decoders.py
-```
-
-Generates:
-
-```text
-results/comparison/decoder_comparison.png
-```
-
-### Logical Failure-Rate Experiment
+Run the logical memory experiment:
 
 ```bash
 python experiments/logical_failure_stim.py
 ```
 
-Runs logical memory experiments for both **X** and **Z** memory bases across multiple code distances and produces logical failure-rate and distance-scaling plots.
+This performs Monte Carlo simulations for both **X** and **Z** memory bases across multiple code distances and produces logical failure-rate and distance-scaling plots.
 
 ---
 
 ## Example Result
 
-### Decoder Comparison
+### Logical Failure Rate (X Memory)
 
-![Decoder Comparison](results/comparison/decoder_comparison.png)
+![Logical Failure](results/logical_failure/X/distance_scaling.png)
 
 ### Logical Failure Rate (Z Memory)
 
@@ -98,20 +97,21 @@ Runs logical memory experiments for both **X** and **Z** memory bases across mul
 
 ---
 
-## Current Limitation
+## Current Status
 
-The current implementation uses a simplified checkerboard stabilizer layout. While the complete **Stim → DEM → PyMatching** pipeline is operational, the geometry does not yet implement the boundary structure of a full planar surface code. Consequently, the expected reduction in logical error rate with increasing code distance has not yet been achieved.
+The complete **Stim → Detector Error Model (DEM) → PyMatching** decoding pipeline is operational. The current implementation uses a simplified checkerboard stabilizer layout rather than the full planar surface-code geometry. Consequently, the simulator does not yet reproduce the expected reduction in logical error rate with increasing code distance. 
 
-The next development milestone is implementing proper planar surface-code geometry with boundary stabilizers and validating distance scaling.
+The next development milestone is implementing physically accurate planar surface-code geometry with rough and smooth boundaries, boundary stabilizers, and geometry-derived logical operators.
 
 ---
 
 ## Future Work
 
-- Planar surface-code geometry
+- Physically accurate planar surface-code geometry
 - Boundary stabilizers
+- Geometry-derived logical operators
 - Threshold analysis
-- Decoder benchmarking
+- Alternative decoder benchmarking
 - GitHub Actions CI
 
 ---
@@ -132,8 +132,10 @@ pytest
 - Stim
 - PyMatching
 - NumPy
+- NetworkX
 - Matplotlib
 - Pytest
+- Qiskit (legacy simulation pipeline)
 
 Install dependencies:
 
